@@ -44,6 +44,17 @@
   --transition-base: 0.2s;
   --transition-slow: 0.3s;
   --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* 统一磨砂透明效果 */
+  --frosted-blur: 16px;
+  --frosted-blur-small: 4px;
+  --frosted-bg-light: rgba(255, 255, 255, 0.75);
+  --frosted-bg-dark: rgba(22, 27, 34, 0.75);
+  --frosted-shadow-light: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --frosted-shadow-dark: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+  /* 背景图片遮罩（深色模式） */
+  --bg-overlay-dark: rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="dark"] {
@@ -67,6 +78,8 @@
   --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.4);
 
   /* 间距和圆角在深色模式下保持一致 */
+
+  /* 磨砂透明效果在深色模式下保持一致 */
 }
 
 body {
@@ -192,6 +205,21 @@ select {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* 统一磨砂透明工具类 */
+.frosted-glass {
+  backdrop-filter: blur(var(--frosted-blur));
+  -webkit-backdrop-filter: blur(var(--frosted-blur));
+  background-color: var(--frosted-bg-light);
+  box-shadow: var(--frosted-shadow-light);
+  transition: background-color var(--transition-base) var(--transition-timing),
+    box-shadow var(--transition-base) var(--transition-timing);
+}
+
+[data-theme="dark"] .frosted-glass {
+  background-color: var(--frosted-bg-dark);
+  box-shadow: var(--frosted-shadow-dark);
 }
 
 /* 无障碍：高对比度模式支持 */
