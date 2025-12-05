@@ -11,7 +11,7 @@
     <header class="header" role="banner">
       <div class="header-content">
         <div class="logo-section">
-          <h1 class="logo">0x3.im</h1>
+          <h1 class="logo">0x3</h1>
         </div>
         <nav class="header-actions" aria-label="主要操作">
           <button 
