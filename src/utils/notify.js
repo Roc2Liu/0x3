@@ -26,25 +26,25 @@ function createNotificationContainer() {
  */
 function showNotification(options) {
   createNotificationContainer()
-  
+
   return new Promise((resolve) => {
     const notificationId = Math.random().toString(36).substr(2, 9)
-    
+
     const handleClose = () => {
       removeNotification(notificationId)
       resolve(options.result || false)
     }
-    
+
     const handleConfirm = () => {
       removeNotification(notificationId)
       resolve(true)
     }
-    
+
     const handleCancel = () => {
       removeNotification(notificationId)
       resolve(false)
     }
-    
+
     const notificationInstance = createApp({
       render: () => h(Notification, {
         ...options,
@@ -57,11 +57,11 @@ function showNotification(options) {
         onClose: handleClose
       })
     })
-    
+
     const mountPoint = document.createElement('div')
     notificationContainer.appendChild(mountPoint)
     notificationInstance.mount(mountPoint)
-    
+
     notificationQueue.push({
       id: notificationId,
       instance: notificationInstance,
@@ -98,7 +98,7 @@ export function alert(message, title = '提示') {
       {
         label: '确定',
         class: 'primary',
-        handler: () => {}
+        handler: () => { }
       }
     ]
   })
@@ -107,7 +107,7 @@ export function alert(message, title = '提示') {
 /**
  * Confirm - 确认对话框
  */
-export function confirm(message, title = '确认') {
+export function confirm(message, title = '提示') {
   return showNotification({
     title,
     message,
@@ -117,14 +117,14 @@ export function confirm(message, title = '确认') {
       {
         label: '取消',
         class: '',
-        handler: () => {},
+        handler: () => { },
         cancel: true,
         result: false
       },
       {
         label: '确定',
         class: 'primary',
-        handler: () => {},
+        handler: () => { },
         confirm: true,
         result: true
       }
@@ -147,7 +147,7 @@ export function success(message, title = '成功', duration = 3000) {
       {
         label: '确定',
         class: 'primary',
-        handler: () => {}
+        handler: () => { }
       }
     ]
   })
@@ -166,7 +166,7 @@ export function error(message, title = '错误') {
       {
         label: '确定',
         class: 'danger',
-        handler: () => {}
+        handler: () => { }
       }
     ]
   })
@@ -185,7 +185,7 @@ export function warning(message, title = '警告') {
       {
         label: '确定',
         class: 'primary',
-        handler: () => {}
+        handler: () => { }
       }
     ]
   })
