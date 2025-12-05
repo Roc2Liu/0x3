@@ -96,6 +96,7 @@
         @remove-engine="handleRemoveEngine"
         @update-engine="handleUpdateEngine"
         @import-engines="handleImportEngines"
+        @background-changed="handleBackgroundChanged"
         @close="showSettings = false"
       />
       
@@ -115,6 +116,7 @@ import About from './components/About.vue'
 import { useTheme } from './composables/useTheme'
 import { useSearchEngines } from './composables/useSearchEngines'
 import { alert, error, success } from './utils/notify.js'
+import { getBackgroundImage, setBackgroundImage } from './utils/backgroundImage.js'
 
 export default {
   name: 'App',
@@ -128,9 +130,13 @@ export default {
     const { searchEngines, currentEngine, switchEngine, addEngine, removeEngine, updateEngine, initEngines } = useSearchEngines()
     const showSettings = ref(false)
     const showAbout = ref(false)
+    const backgroundImage = ref(null)
 
-    onMounted(() => {
+    onMounted(async () => {
       initEngines()
+      // 加载背景图片
+      backgroundImage.value = await getBackgroundImage()
+      applyBackgroundImage(backgroundImage.value)
     })
 
     // 处理设置面板打开时的滚动条隐藏
@@ -261,6 +267,30 @@ export default {
       return engine?.name || 'Bing'
     })
 
+    const applyBackgroundImage = (imageUrl) => {
+      const app = document.querySelector('.app')
+      if (app) {
+        if (imageUrl) {
+          app.style.backgroundImage = `url(${imageUrl})`
+          app.style.backgroundSize = 'cover'
+          app.style.backgroundPosition = 'center'
+          app.style.backgroundRepeat = 'no-repeat'
+          app.style.backgroundAttachment = 'fixed'
+        } else {
+          app.style.backgroundImage = ''
+          app.style.backgroundSize = ''
+          app.style.backgroundPosition = ''
+          app.style.backgroundRepeat = ''
+          app.style.backgroundAttachment = ''
+        }
+      }
+    }
+
+    const handleBackgroundChanged = (imageUrl) => {
+      backgroundImage.value = imageUrl
+      applyBackgroundImage(imageUrl)
+    }
+
     return {
       theme,
       themeIcon,
@@ -281,7 +311,9 @@ export default {
       currentEngineName,
       showAbout,
       isImageIcon,
-      handleSkipToMain
+      handleSkipToMain,
+      backgroundImage,
+      handleBackgroundChanged
     }
   }
 }
@@ -294,6 +326,24 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+/* 深色模式下背景图片遮罩 */
+.app::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  pointer-events: none;
+  z-index: 0;
+  transition: background-color var(--transition-base) var(--transition-timing);
+}
+
+[data-theme="dark"] .app::before {
+  background-color: var(--bg-overlay-dark);
 }
 
 .skip-link {
@@ -326,21 +376,22 @@ export default {
 }
 
 .header {
-  background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   padding: var(--spacing-md) 0;
   position: sticky;
   top: 0;
   z-index: 100;
-  backdrop-filter: blur(12px);
-  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(var(--frosted-blur));
+  -webkit-backdrop-filter: blur(var(--frosted-blur));
+  background-color: var(--frosted-bg-light);
   box-shadow: var(--shadow-sm);
   transition: background-color var(--transition-base) var(--transition-timing),
-              border-color var(--transition-base) var(--transition-timing);
+              border-color var(--transition-base) var(--transition-timing),
+              box-shadow var(--transition-base) var(--transition-timing);
 }
 
 [data-theme="dark"] .header {
-  background-color: rgba(22, 27, 34, 0.85);
+  background-color: var(--frosted-bg-dark);
 }
 
 .header-content {
@@ -428,6 +479,8 @@ export default {
   width: 100%;
   scroll-margin-top: 0;
   transition: padding var(--transition-base) var(--transition-timing);
+  position: relative;
+  z-index: 1;
 }
 
 .main-content:focus {
