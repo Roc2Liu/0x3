@@ -22,7 +22,7 @@
     <div class="about-content">
       <div class="about-intro">
         <p class="about-description">
-          一个美观、现代的搜索引擎聚合导航网站。支持多引擎切换、自定义添加、主题切换、数据导入导出、云同步等功能。
+          一个美观、现代的搜索引擎聚合导航网站。支持多引擎切换、自定义添加、主题切换、背景图片、数据导入导出、云同步等功能。
         </p>
         <div class="badges">
           <span class="badge badge-vue">Vue 3.4+</span>
@@ -49,10 +49,20 @@
         <div class="feature-group">
           <h3 class="feature-title">💾 数据管理</h3>
           <ul class="feature-list">
-            <li><strong>本地存储</strong>：所有数据存储在浏览器 LocalStorage，完全离线可用</li>
+            <li><strong>本地存储</strong>：搜索引擎配置存储在 LocalStorage，背景图片存储在 IndexedDB，完全离线可用</li>
             <li><strong>导入导出</strong>：支持加密的搜索引擎配置导入导出</li>
             <li><strong>数据安全</strong>：基于域名和时间戳的动态加密，确保数据安全</li>
             <li><strong>云同步</strong>：使用 GitHub Gist 在多个设备间同步配置</li>
+          </ul>
+        </div>
+
+        <div class="feature-group">
+          <h3 class="feature-title">🖼️ 背景图片</h3>
+          <ul class="feature-list">
+            <li><strong>自定义背景</strong>：支持上传自定义背景图片，以原始质量存储</li>
+            <li><strong>历史管理</strong>：自动保存最多 5 张历史背景图片，方便快速切换</li>
+            <li><strong>磨砂透明</strong>：统一的磨砂透明背景效果，美观现代</li>
+            <li><strong>深色模式适配</strong>：深色模式下自动添加遮罩，保护眼睛</li>
           </ul>
         </div>
 
@@ -73,6 +83,7 @@
             <li><strong>时间自动切换</strong>：自动模式下，晚上 8 点到早上 6 点自动切换深色模式</li>
             <li><strong>系统跟随</strong>：自动模式跟随系统偏好设置</li>
             <li><strong>平滑过渡</strong>：主题切换带有平滑动画效果</li>
+            <li><strong>磨砂透明</strong>：统一的磨砂透明背景效果，提升视觉体验</li>
           </ul>
         </div>
 
@@ -154,6 +165,18 @@ DuckDuckGo:  https://duckduckgo.com/?q={query}</code></pre>
         </div>
 
         <div class="usage-item">
+          <h3 class="usage-subtitle">背景图片</h3>
+          <ol class="usage-steps">
+            <li>进入设置页面，找到"背景图片"区域</li>
+            <li>点击"选择图片"按钮，选择要上传的背景图片</li>
+            <li>图片会以原始质量保存，并自动添加到历史记录</li>
+            <li>在"历史背景"中可以选择之前使用过的背景图片</li>
+            <li>点击图片上的删除按钮可以删除历史背景</li>
+          </ol>
+          <p class="faq-answer">💡 <strong>提示</strong>：系统最多保存 5 张历史背景图片。深色模式下会自动添加遮罩，保护眼睛。</p>
+        </div>
+
+        <div class="usage-item">
           <h3 class="usage-subtitle">云同步</h3>
           <ol class="usage-steps">
             <li><strong>创建 GitHub Personal Access Token</strong>
@@ -230,7 +253,8 @@ DuckDuckGo:  https://duckduckgo.com/?q={query}</code></pre>
           <li><strong>vite-plugin-pwa</strong> - PWA 支持插件</li>
           <li><strong>Workbox</strong> - Service Worker 工具库</li>
           <li><strong>CSS Variables</strong> - 动态主题切换</li>
-          <li><strong>LocalStorage API</strong> - 本地数据存储</li>
+          <li><strong>LocalStorage API</strong> - 本地数据存储（搜索引擎配置）</li>
+          <li><strong>IndexedDB API</strong> - 大容量本地存储（背景图片）</li>
           <li><strong>GitHub Gist API</strong> - 云同步服务</li>
         </ul>
       </section>
@@ -256,7 +280,23 @@ DuckDuckGo:  https://duckduckgo.com/?q={query}</code></pre>
 
         <div class="faq-item">
           <h3 class="faq-question">Q: 数据存储在哪里？</h3>
-          <p class="faq-answer">A: 所有数据（搜索引擎列表、当前引擎、主题设置）都存储在浏览器的 LocalStorage 中，完全离线可用。如果启用了云同步，数据会加密存储在 GitHub Gist 中。</p>
+          <p class="faq-answer">A: 
+            <strong>搜索引擎配置</strong>：存储在浏览器的 LocalStorage 中<br>
+            <strong>背景图片</strong>：存储在 IndexedDB 中（支持更大的存储空间，原始质量保存）<br>
+            <strong>云同步数据</strong>：如果启用了云同步，数据会加密存储在 GitHub Gist 中<br>
+            所有数据完全离线可用，不会上传到任何服务器（除云同步外）。
+          </p>
+        </div>
+
+        <div class="faq-item">
+          <h3 class="faq-question">Q: 背景图片功能如何使用？</h3>
+          <p class="faq-answer">A: 
+            1. 进入设置页面，找到"背景图片"区域<br>
+            2. 点击"选择图片"按钮，上传背景图片<br>
+            3. 图片会以原始质量保存到 IndexedDB<br>
+            4. 系统会自动保存最多 5 张历史背景，可以快速切换<br>
+            5. 深色模式下会自动添加遮罩，保护眼睛
+          </p>
         </div>
 
         <div class="faq-item">
