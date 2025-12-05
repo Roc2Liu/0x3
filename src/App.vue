@@ -218,8 +218,13 @@ export default {
     }
 
     const isImageIcon = (icon) => {
-      // 判断是否为图片数据 URL（base64 编码的 SVG）
-      return icon && (icon.startsWith('data:image/svg+xml') || icon.startsWith('data:image/'))
+      // 判断是否为图片：数据 URL（base64 编码的 SVG）或 SVG 文件路径
+      return icon && (
+        icon.startsWith('data:image/svg+xml') || 
+        icon.startsWith('data:image/') ||
+        icon.endsWith('.svg') ||
+        icon.startsWith('/') && icon.includes('.svg')
+      )
     }
 
     const handleSkipToMain = async (e) => {

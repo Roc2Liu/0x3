@@ -230,7 +230,7 @@ export default {
     })
 
     const currentEngineName = computed(() => currentEngineData.value?.name || '')
-    const currentEngineIcon = computed(() => currentEngineData.value?.icon || '🔍')
+    const currentEngineIcon = computed(() => currentEngineData.value?.icon || '/bing-color.svg')
 
     const filteredEngines = computed(() => {
       if (!engineFilter.value.trim()) {
@@ -286,8 +286,13 @@ export default {
     }
 
     const isImageIcon = (icon) => {
-      // 判断是否为图片数据 URL（base64 编码的 SVG）
-      return icon && (icon.startsWith('data:image/svg+xml') || icon.startsWith('data:image/'))
+      // 判断是否为图片：数据 URL（base64 编码的 SVG）或 SVG 文件路径
+      return icon && (
+        icon.startsWith('data:image/svg+xml') || 
+        icon.startsWith('data:image/') ||
+        icon.endsWith('.svg') ||
+        icon.startsWith('/') && icon.includes('.svg')
+      )
     }
 
     // 点击外部关闭下拉菜单

@@ -7,7 +7,7 @@ const CURRENT_ENGINE_KEY = 'search-aggregator-current-engine'
 const defaultEngine = {
   id: 'bing',
   name: 'Bing',
-  icon: '🔍',
+  icon: '/bing-color.svg',
   url: 'https://www.bing.com/search?q={query}',
   isDefault: true
 }
@@ -24,8 +24,16 @@ export function useSearchEngines() {
       try {
         const parsed = JSON.parse(saved)
         // 确保 Bing 始终存在
-        if (!parsed.some(e => e.id === 'bing')) {
+        const bingIndex = parsed.findIndex(e => e.id === 'bing')
+        if (bingIndex === -1) {
           parsed.unshift(defaultEngine)
+        } else {
+          // 更新 Bing 图标为 SVG（如果还是旧的 Emoji）
+          if (parsed[bingIndex].icon === '🔍') {
+            parsed[bingIndex].icon = '/bing-color.svg'
+            // 保存更新后的配置
+            localStorage.setItem(ENGINES_KEY, JSON.stringify(parsed))
+          }
         }
         searchEngines.value = parsed
       } catch (e) {

@@ -155,6 +155,101 @@
         </div>
       </section>
 
+      <section class="settings-section" aria-labelledby="cloud-sync-title">
+        <div class="section-header">
+          <h3 id="cloud-sync-title" class="section-title">云同步</h3>
+        </div>
+        <div class="cloud-sync-card">
+          <div v-if="!cloudSyncConfig" class="cloud-sync-setup">
+            <p class="sync-description">
+              使用 GitHub Gist 在多个设备间同步搜索引擎配置。数据加密存储，安全可靠。
+            </p>
+            <div class="form-group">
+              <label for="github-token">GitHub Personal Access Token</label>
+              <input
+                id="github-token"
+                v-model="githubToken"
+                type="password"
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                class="token-input"
+                aria-describedby="token-help"
+              />
+              <small id="token-help" class="form-hint">
+                需要 <code>gist</code> 权限。创建 Token：
+                <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">
+                  https://github.com/settings/tokens
+                </a>
+              </small>
+            </div>
+            <div class="form-group" v-if="githubToken">
+              <label for="gist-id">Gist ID（可选，首次上传后自动保存）</label>
+              <input
+                id="gist-id"
+                v-model="gistId"
+                type="text"
+                placeholder="留空则创建新的 Gist"
+                class="token-input"
+              />
+              <small class="form-hint">如果已有 Gist ID，填写后可下载该 Gist 的数据</small>
+            </div>
+            <button
+              class="sync-setup-btn"
+              @click="handleSetupCloudSync"
+              :disabled="!githubToken || syncing"
+            >
+              <span v-if="syncing">验证中...</span>
+              <span v-else>验证并保存</span>
+            </button>
+          </div>
+          
+          <div v-else class="cloud-sync-active">
+            <div class="sync-status">
+              <div class="status-item">
+                <span class="status-label">GitHub 用户：</span>
+                <span class="status-value">{{ cloudSyncConfig.username }}</span>
+              </div>
+              <div class="status-item" v-if="lastSyncTime">
+                <span class="status-label">最后同步：</span>
+                <span class="status-value">{{ formatLastSyncTime(lastSyncTime) }}</span>
+              </div>
+            </div>
+            <div class="sync-actions">
+              <button
+                class="sync-upload-btn"
+                @click="handleCloudUpload"
+                :disabled="syncing"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                上传到云端
+              </button>
+              <button
+                class="sync-download-btn"
+                @click="handleCloudDownload"
+                :disabled="syncing"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                从云端下载
+              </button>
+              <button
+                class="sync-disconnect-btn"
+                @click="handleDisconnectCloudSync"
+                :disabled="syncing"
+              >
+                断开连接
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="settings-section" aria-labelledby="engines-list-title">
         <div class="section-header">
           <h3 id="engines-list-title" class="section-title">已添加的搜索引擎</h3>
@@ -349,6 +444,16 @@
 <script>
 import { encryptData, decryptData } from '../utils/xfzhcav2vj9.js'
 import { alert, confirm, success, error } from '../utils/notify.js'
+import {
+  getSyncConfig,
+  saveSyncConfig,
+  clearSyncConfig,
+  isCloudSyncEnabled,
+  getLastSyncTime,
+  syncUpload,
+  syncDownload,
+  validateGitHubToken
+} from '../utils/cloudSync.js'
 
 export default {
   name: 'Settings',
@@ -376,7 +481,12 @@ export default {
       },
       searchQuery: '',
       filterType: 'all', // 'all', 'default', 'custom'
-      sortBy: 'name' // 'name', 'added'
+      sortBy: 'name', // 'name', 'added'
+      githubToken: '',
+      gistId: '',
+      cloudSyncConfig: null,
+      lastSyncTime: null,
+      syncing: false
     }
   },
   computed: {
@@ -580,8 +690,13 @@ export default {
       this.cancelEdit()
     },
     isImageIcon(icon) {
-      // 判断是否为图片数据 URL（base64 编码的 SVG）
-      return icon && (icon.startsWith('data:image/svg+xml') || icon.startsWith('data:image/'))
+      // 判断是否为图片：数据 URL（base64 编码的 SVG）或 SVG 文件路径
+      return icon && (
+        icon.startsWith('data:image/svg+xml') || 
+        icon.startsWith('data:image/') ||
+        icon.endsWith('.svg') ||
+        (icon.startsWith('/') && icon.includes('.svg'))
+      )
     },
     async handleIconUpload(event, type) {
       const file = event.target.files?.[0]
@@ -739,9 +854,177 @@ export default {
       }
 
       document.addEventListener('keydown', this.focusTrapHandler)
+    },
+    // 云同步相关方法
+    loadCloudSyncConfig() {
+      this.cloudSyncConfig = getSyncConfig()
+      this.lastSyncTime = getLastSyncTime()
+      if (this.cloudSyncConfig) {
+        this.gistId = this.cloudSyncConfig.gistId || ''
+      }
+    },
+    formatLastSyncTime(date) {
+      if (!date) return '从未同步'
+      const now = new Date()
+      const syncTime = new Date(date)
+      const diffMs = now - syncTime
+      const diffMins = Math.floor(diffMs / 60000)
+      const diffHours = Math.floor(diffMs / 3600000)
+      const diffDays = Math.floor(diffMs / 86400000)
+      
+      if (diffMins < 1) return '刚刚'
+      if (diffMins < 60) return `${diffMins} 分钟前`
+      if (diffHours < 24) return `${diffHours} 小时前`
+      if (diffDays < 7) return `${diffDays} 天前`
+      return syncTime.toLocaleDateString('zh-CN')
+    },
+    async handleSetupCloudSync() {
+      if (!this.githubToken || !this.githubToken.trim()) {
+        await error('请输入 GitHub Token')
+        return
+      }
+
+      this.syncing = true
+      try {
+        const result = await validateGitHubToken(this.githubToken.trim())
+        
+        if (!result.valid) {
+          await error(result.error || 'Token 验证失败')
+          return
+        }
+
+        // 保存配置
+        const config = {
+          token: this.githubToken.trim(),
+          username: result.username,
+          gistId: this.gistId.trim() || null
+        }
+        saveSyncConfig(config)
+        this.cloudSyncConfig = config
+        this.githubToken = '' // 清空输入框
+        this.gistId = config.gistId || ''
+        
+        await success(`已连接到 GitHub 用户：${result.username}`)
+      } catch (err) {
+        console.error('设置云同步失败:', err)
+        await error('设置失败：' + err.message)
+      } finally {
+        this.syncing = false
+      }
+    },
+    async handleCloudUpload() {
+      if (!this.cloudSyncConfig) {
+        await error('请先配置云同步')
+        return
+      }
+
+      this.syncing = true
+      try {
+        // 准备导出数据（只导出自定义引擎）
+        const customEngines = this.engines.filter(e => e.id !== 'bing')
+        
+        if (customEngines.length === 0) {
+          await alert('没有可上传的自定义搜索引擎')
+          return
+        }
+
+        const exportData = {
+          version: '1.0',
+          timestamp: new Date().toISOString(),
+          engines: customEngines,
+          count: customEngines.length
+        }
+
+        // 加密数据
+        const encrypted = encryptData(exportData)
+
+        // 上传到 Gist
+        const result = await syncUpload(encrypted)
+
+        if (!result.success) {
+          await error(result.message)
+          return
+        }
+
+        // 更新 Gist ID（如果是首次上传）
+        if (result.gistId && !this.cloudSyncConfig.gistId) {
+          this.cloudSyncConfig.gistId = result.gistId
+          saveSyncConfig(this.cloudSyncConfig)
+          this.gistId = result.gistId
+        }
+
+        this.lastSyncTime = getLastSyncTime()
+        await success(`成功上传 ${customEngines.length} 个搜索引擎到云端`)
+      } catch (err) {
+        console.error('上传失败:', err)
+        await error('上传失败：' + err.message)
+      } finally {
+        this.syncing = false
+      }
+    },
+    async handleCloudDownload() {
+      if (!this.cloudSyncConfig || !this.cloudSyncConfig.gistId) {
+        await error('未配置 Gist ID，请先在设置中填写或上传一次')
+        return
+      }
+
+      this.syncing = true
+      try {
+        const result = await syncDownload()
+
+        if (!result.success) {
+          await error(result.message)
+          return
+        }
+
+        // 解密数据
+        const data = decryptData(result.data)
+
+        // 验证数据格式
+        if (!data.engines || !Array.isArray(data.engines)) {
+          throw new Error('无效的数据格式')
+        }
+
+        // 验证引擎数据
+        const validEngines = data.engines.filter(engine => {
+          return engine.id && engine.name && engine.url && engine.url.includes('{query}')
+        })
+
+        if (validEngines.length === 0) {
+          throw new Error('没有有效的搜索引擎数据')
+        }
+
+        // 确认导入
+        const message = `将从云端下载 ${validEngines.length} 个搜索引擎。\n\n注意：\n- 如果存在相同 ID 的引擎，将被覆盖\n- Bing 默认引擎不会被覆盖\n\n确定要继续吗？`
+        
+        const confirmed = await confirm(message)
+        if (confirmed) {
+          this.$emit('import-engines', validEngines)
+          this.lastSyncTime = getLastSyncTime()
+          await success(`成功从云端下载 ${validEngines.length} 个搜索引擎`)
+        }
+      } catch (err) {
+        console.error('下载失败:', err)
+        await error('下载失败：' + err.message)
+      } finally {
+        this.syncing = false
+      }
+    },
+    async handleDisconnectCloudSync() {
+      const confirmed = await confirm('确定要断开云同步连接吗？\n\n断开后不会删除云端数据，但需要重新配置才能再次同步。')
+      if (confirmed) {
+        clearSyncConfig()
+        this.cloudSyncConfig = null
+        this.lastSyncTime = null
+        this.githubToken = ''
+        this.gistId = ''
+        await success('已断开云同步连接')
+      }
     }
   },
   mounted() {
+    // 加载云同步配置
+    this.loadCloudSyncConfig()
     // 保存当前焦点元素
     this.previousActiveElement = document.activeElement
     // 聚焦到第一个输入框或关闭按钮
@@ -915,6 +1198,179 @@ export default {
   font-size: 14px;
   color: var(--text-secondary);
   font-weight: 500;
+}
+
+/* 云同步样式 */
+.cloud-sync-card {
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sync-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.token-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.token-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 4px var(--focus-ring);
+  outline: none;
+}
+
+.token-input code {
+  background-color: var(--bg-hover);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+}
+
+.sync-setup-btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sync-setup-btn:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.sync-setup-btn:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.sync-setup-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sync-status {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.status-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.status-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sync-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sync-upload-btn,
+.sync-download-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sync-upload-btn:hover:not(:disabled),
+.sync-download-btn:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.sync-upload-btn:focus-visible,
+.sync-download-btn:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.sync-upload-btn:disabled,
+.sync-download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sync-download-btn {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+}
+
+.sync-download-btn:hover:not(:disabled) {
+  background-color: var(--bg-card);
+  border-color: var(--border-hover);
+}
+
+.sync-disconnect-btn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 2px solid var(--border-color);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sync-disconnect-btn:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.sync-disconnect-btn:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.sync-disconnect-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .engines-filter-bar {
@@ -1563,6 +2019,22 @@ export default {
   
   .settings-content {
     gap: 40px;
+  }
+
+  /* 云同步移动端样式 */
+  .cloud-sync-card {
+    padding: 20px;
+  }
+
+  .sync-actions {
+    flex-direction: column;
+  }
+
+  .sync-upload-btn,
+  .sync-download-btn,
+  .sync-disconnect-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
