@@ -155,6 +155,71 @@
         </div>
       </section>
 
+      <section class="settings-section" aria-labelledby="background-image-title">
+        <div class="section-header">
+          <h3 id="background-image-title" class="section-title">背景图片</h3>
+        </div>
+        <div class="background-image-card">
+          <div class="form-group">
+            <label for="background-upload">上传背景图片</label>
+            <label for="background-upload" class="upload-button">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              选择图片
+              <input 
+                id="background-upload"
+                type="file"
+                accept="image/*"
+                @change="handleBackgroundUpload"
+                style="display: none;"
+              />
+            </label>
+            <small class="form-hint">支持 JPG、PNG、GIF、WebP 等格式，建议使用高质量图片</small>
+          </div>
+          
+          <div v-if="currentBackgroundImage" class="current-background">
+            <div class="current-background-preview">
+              <img :src="currentBackgroundImage" alt="当前背景" />
+              <button class="remove-background-btn" @click="handleRemoveBackground" aria-label="移除背景">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <p class="current-background-label">当前背景</p>
+          </div>
+
+          <div v-if="backgroundHistory.length > 0" class="background-history">
+            <h4 class="history-title">历史背景</h4>
+            <div class="history-grid">
+              <div 
+                v-for="(image, index) in backgroundHistory" 
+                :key="index"
+                class="history-item"
+                :class="{ 'is-current': image === currentBackgroundImage }"
+              >
+                <img :src="image" :alt="`历史背景 ${index + 1}`" @click="handleSelectHistoryBackground(image)" />
+                <button 
+                  class="delete-history-btn" 
+                  @click.stop="handleDeleteHistoryBackground(image)"
+                  aria-label="删除此背景"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+                <div v-if="image === currentBackgroundImage" class="current-badge">当前</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="settings-section" aria-labelledby="cloud-sync-title">
         <div class="section-header">
           <h3 id="cloud-sync-title" class="section-title">云同步</h3>
@@ -540,6 +605,14 @@ import {
   validateGitHubToken
   // validateJianguoyunCredentials // 暂时隐藏
 } from '../utils/cloudSync.js'
+import {
+  getBackgroundImage,
+  setBackgroundImage,
+  clearBackgroundImage,
+  getBackgroundImagesHistory,
+  removeFromHistory,
+  clearHistory
+} from '../utils/backgroundImage.js'
 
 export default {
   name: 'Settings',
@@ -549,7 +622,7 @@ export default {
       required: true
     }
   },
-  emits: ['add-engine', 'remove-engine', 'update-engine', 'close', 'import-engines'],
+  emits: ['add-engine', 'remove-engine', 'update-engine', 'close', 'import-engines', 'background-changed'],
   data() {
     return {
       previousActiveElement: null,
@@ -577,7 +650,9 @@ export default {
       // jianguoyunFilePath: '/0x3/',
       cloudSyncConfig: null,
       lastSyncTime: null,
-      syncing: false
+      syncing: false,
+      currentBackgroundImage: null,
+      backgroundHistory: []
     }
   },
   computed: {
@@ -1189,11 +1264,124 @@ export default {
         // this.jianguoyunFilePath = '/0x3/'
         await success('已断开云同步连接')
       }
+    },
+    // 背景图片相关方法
+    async loadBackgroundImage() {
+      try {
+        this.currentBackgroundImage = await getBackgroundImage()
+        this.backgroundHistory = await getBackgroundImagesHistory()
+      } catch (err) {
+        console.error('加载背景图片失败:', err)
+        this.currentBackgroundImage = null
+        this.backgroundHistory = []
+      }
+    },
+    async handleBackgroundUpload(event) {
+      const file = event.target.files?.[0]
+      if (!file) return
+
+      // 验证文件类型
+      if (!file.type.startsWith('image/')) {
+        await error('请选择图片文件')
+        event.target.value = ''
+        return
+      }
+
+      // 验证文件大小（限制为 5MB）
+      if (file.size > 5 * 1024 * 1024) {
+        await error('图片大小不能超过 5MB')
+        event.target.value = ''
+        return
+      }
+
+      try {
+        const reader = new FileReader()
+        reader.onload = async (e) => {
+          const result = e.target?.result
+          if (result) {
+            try {
+              // 保存图片（原始质量，不压缩）
+              const imageDataUrl = await setBackgroundImage(result)
+              this.currentBackgroundImage = imageDataUrl
+              this.backgroundHistory = await getBackgroundImagesHistory()
+              
+              // 通知父组件更新背景
+              this.$emit('background-changed', imageDataUrl)
+              
+              await success('背景图片已设置')
+            } catch (saveError) {
+              console.error('保存背景图片失败:', saveError)
+              await error(saveError.message || '保存失败，可能是存储空间不足')
+            }
+          }
+        }
+        reader.onerror = async () => {
+          await error('读取图片失败，请重试')
+          event.target.value = ''
+        }
+        reader.readAsDataURL(file)
+      } catch (err) {
+        console.error('上传背景图片失败:', err)
+        await error('上传失败：' + err.message)
+        event.target.value = ''
+      }
+    },
+    async handleRemoveBackground() {
+      const confirmed = await confirm('确定要移除当前背景图片吗？')
+      if (confirmed) {
+        await clearBackgroundImage()
+        this.currentBackgroundImage = null
+        
+        // 通知父组件更新背景
+        this.$emit('background-changed', null)
+        
+        await success('已移除背景图片')
+      }
+    },
+    async handleSelectHistoryBackground(imageUrl) {
+      try {
+        // 直接使用历史背景图片
+        // 需要更新到当前背景（会重新添加到历史记录开头）
+        await setBackgroundImage(imageUrl)
+        this.currentBackgroundImage = imageUrl
+        this.backgroundHistory = await getBackgroundImagesHistory()
+        
+        // 通知父组件更新背景
+        this.$emit('background-changed', imageUrl)
+        
+        await success('已切换背景图片')
+      } catch (err) {
+        console.error('切换背景图片失败:', err)
+        await error(err.message || '切换失败')
+      }
+    },
+    async handleDeleteHistoryBackground(imageUrl) {
+      const confirmed = await confirm('确定要删除这张背景图片吗？')
+      if (confirmed) {
+        try {
+          await removeFromHistory(imageUrl)
+          this.backgroundHistory = await getBackgroundImagesHistory()
+          
+          // 如果删除的是当前背景，清除当前背景
+          if (this.currentBackgroundImage === imageUrl) {
+            await clearBackgroundImage()
+            this.currentBackgroundImage = null
+            this.$emit('background-changed', null)
+          }
+          
+          await success('已删除背景图片')
+        } catch (err) {
+          console.error('删除历史背景失败:', err)
+          await error('删除失败：' + err.message)
+        }
+      }
     }
   },
   mounted() {
     // 加载云同步配置
     this.loadCloudSyncConfig()
+    // 加载背景图片
+    this.loadBackgroundImage()
     // 保存当前焦点元素
     this.previousActiveElement = document.activeElement
     // 聚焦到第一个输入框或关闭按钮
@@ -1235,6 +1423,18 @@ export default {
   max-width: 900px;
   margin: 0 auto;
   padding: 48px 32px 64px;
+  backdrop-filter: blur(var(--frosted-blur));
+  -webkit-backdrop-filter: blur(var(--frosted-blur));
+  background-color: var(--frosted-bg-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--frosted-shadow-light);
+  transition: background-color var(--transition-base) var(--transition-timing),
+              box-shadow var(--transition-base) var(--transition-timing);
+}
+
+[data-theme="dark"] .settings-container {
+  background-color: var(--frosted-bg-dark);
+  box-shadow: var(--frosted-shadow-dark);
 }
 
 .settings-header-bar {
@@ -1822,6 +2022,181 @@ export default {
   border-bottom-color: transparent;
 }
 
+/* 背景图片样式 */
+.background-image-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.upload-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.upload-button:hover {
+  background-color: var(--accent-hover);
+}
+
+.upload-button:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.current-background {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.current-background-preview {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.current-background-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-background-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(var(--frosted-blur-small));
+  -webkit-backdrop-filter: blur(var(--frosted-blur-small));
+}
+
+.remove-background-btn:hover {
+  background-color: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
+}
+
+.current-background-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.background-history {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.history-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.history-item {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--bg-primary);
+}
+
+.history-item:hover {
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.history-item.is-current {
+  border-color: var(--accent-color);
+  border-width: 2px;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.history-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.delete-history-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background-color: rgba(240, 62, 62, 0.9);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.history-item:hover .delete-history-btn {
+  opacity: 1;
+}
+
+.delete-history-btn:hover {
+  background-color: rgba(240, 62, 62, 1);
+  transform: scale(1.1);
+}
+
+.current-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  padding: 2px 8px;
+  background-color: var(--accent-color);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
 .form-error {
   color: #f03e3e;
   font-size: 13px;
@@ -2393,6 +2768,29 @@ export default {
 
   .engines-filter-bar {
     gap: 12px;
+  }
+
+  .background-image-card {
+    padding: 24px;
+    gap: 20px;
+  }
+
+  .upload-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .current-background-preview {
+    max-width: 100%;
+  }
+
+  .history-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+  }
+
+  .history-item {
+    border-radius: 8px;
   }
 }
 </style>
