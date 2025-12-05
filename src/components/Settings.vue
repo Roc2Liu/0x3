@@ -161,10 +161,6 @@
         </div>
         <div class="cloud-sync-card">
           <div v-if="!cloudSyncConfig" class="cloud-sync-setup">
-            <p class="sync-description">
-              在多个设备间同步搜索引擎配置。数据加密存储，安全可靠。
-            </p>
-            
             <!-- 同步方式选择 -->
             <div class="form-group">
               <label>同步方式</label>
@@ -246,7 +242,7 @@
                 />
                 <small id="jianguoyun-password-help" class="form-hint">
                   不是登录密码！需要在坚果云设置中生成应用密码。
-                  <a href="https://www.jianguoyun.com/d/help#/articles/207" target="_blank" rel="noopener noreferrer">
+                  <a href="https://help.jianguoyun.com/?p=2064" target="_blank" rel="noopener noreferrer">
                     查看如何生成应用密码
                   </a>
                 </small>
@@ -1219,32 +1215,32 @@ export default {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  padding-bottom: 40px;
+  padding: 48px 32px 64px;
 }
 
 .settings-header-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 40px;
+  margin-bottom: 56px;
 }
 
 .settings-title {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 600;
   color: var(--text-primary);
   margin: 0;
-  line-height: 1.2;
-  letter-spacing: -0.5px;
+  line-height: 1.3;
+  letter-spacing: -0.3px;
 }
 
 .close-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   background-color: transparent;
-  border: 2px solid var(--border-color);
-  color: var(--text-primary);
+  border: none;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1254,7 +1250,7 @@ export default {
 
 .close-btn:hover {
   background-color: var(--bg-hover);
-  border-color: var(--border-hover);
+  color: var(--text-primary);
 }
 
 .close-btn:focus-visible {
@@ -1271,13 +1267,12 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 48px;
-  padding-bottom: 40px;
 }
 
 .settings-section {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .section-header {
@@ -1306,13 +1301,13 @@ export default {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  border: 2px solid var(--border-color);
+  border: 1px solid var(--border-color);
   background-color: var(--bg-card);
   color: var(--text-primary);
 }
@@ -1321,7 +1316,6 @@ export default {
 .import-btn:hover {
   background-color: var(--bg-hover);
   border-color: var(--border-hover);
-  transform: translateY(-1px);
 }
 
 .export-btn:focus-visible,
@@ -1341,11 +1335,12 @@ export default {
 }
 
 .section-title {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.5;
+  letter-spacing: -0.2px;
 }
 
 .engines-count {
@@ -1357,12 +1352,12 @@ export default {
 /* 云同步样式 */
 .cloud-sync-card {
   background-color: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 16px;
-  padding: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .sync-description {
@@ -1374,16 +1369,18 @@ export default {
 
 .sync-type-selector {
   display: flex;
-  gap: 12px;
-  margin-top: 8px;
+  flex-direction: row;
+  gap: 16px;
+  margin-top: 12px;
 }
 
 .sync-type-option {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border: 2px solid var(--border-color);
+  justify-content: center;
+  gap: 0;
+  padding: 16px 20px;
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   background-color: var(--bg-primary);
   cursor: pointer;
@@ -1392,45 +1389,65 @@ export default {
   font-weight: 500;
   color: var(--text-primary);
   flex: 1;
+  min-width: 0;
+  position: relative;
 }
 
 .sync-type-option:hover {
   border-color: var(--border-hover);
   background-color: var(--bg-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .sync-type-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
   margin: 0;
   cursor: pointer;
-  accent-color: var(--accent-color);
 }
 
 .sync-type-option input[type="radio"]:checked + span {
-  color: var(--accent-color);
-  font-weight: 600;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .sync-type-option:has(input[type="radio"]:checked) {
   border-color: var(--accent-color);
-  background-color: var(--focus-ring);
+  background-color: var(--bg-card);
+  box-shadow: 0 0 0 3px var(--focus-ring), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .sync-config-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  margin-top: 8px;
 }
 
 .token-input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid var(--border-color);
-  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-size: 14px;
   font-family: 'Courier New', monospace;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1.5;
+}
+
+.token-input:hover {
+  border-color: var(--border-hover);
+}
+
+.token-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: none;
 }
 
 .token-input:focus {
@@ -1447,20 +1464,21 @@ export default {
 }
 
 .sync-setup-btn {
-  padding: 12px 24px;
-  border-radius: 12px;
+  padding: 12px 28px;
+  border-radius: 8px;
   background-color: var(--accent-color);
   color: white;
   border: none;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  align-self: flex-start;
+  margin-top: 4px;
 }
 
 .sync-setup-btn:hover:not(:disabled) {
   background-color: var(--accent-hover);
-  transform: translateY(-1px);
 }
 
 .sync-setup-btn:focus-visible {
@@ -1474,10 +1492,12 @@ export default {
 }
 
 .sync-status {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px;
   padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
 }
 
 .status-item {
@@ -1485,6 +1505,7 @@ export default {
   align-items: center;
   gap: 8px;
   font-size: 14px;
+  padding: 8px 0;
 }
 
 .status-label {
@@ -1579,8 +1600,8 @@ export default {
 .engines-filter-bar {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 8px;
+  gap: 14px;
+  margin-bottom: 4px;
 }
 
 .search-filter {
@@ -1684,11 +1705,15 @@ export default {
 
 .add-engine-card {
   background-color: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   padding: 32px;
-  box-shadow: var(--shadow-card);
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.add-engine-card:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .add-engine-card:focus-within {
@@ -1705,25 +1730,38 @@ export default {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .form-group label {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-primary);
-  font-size: 15px;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  display: block;
 }
 
 .form-group input {
-  padding: 14px 18px;
-  border: 2px solid var(--border-color);
-  border-radius: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-size: 15px;
+  font-size: 14px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   line-height: 1.5;
+  width: 100%;
+}
+
+.form-group input:hover {
+  border-color: var(--border-hover);
+}
+
+.form-group input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: none;
 }
 
 .form-group input:focus {
@@ -1740,8 +1778,29 @@ export default {
 .form-hint {
   color: var(--text-secondary);
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.5;
   margin-top: 4px;
+}
+
+.form-hint a {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+}
+
+.form-hint a:hover {
+  color: var(--accent-hover);
+  border-bottom-color: var(--accent-hover);
+}
+
+.form-hint a:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+  border-radius: 3px;
+  border-bottom-color: transparent;
 }
 
 .form-error {
@@ -1763,22 +1822,23 @@ export default {
 }
 
 .add-btn {
-  padding: 14px 28px;
+  padding: 12px 28px;
   background-color: var(--accent-color);
   color: white;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 15px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   align-self: flex-start;
   cursor: pointer;
+  margin-top: 4px;
 }
 
 .add-btn:hover {
   background-color: var(--accent-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
 }
+
 
 .add-btn:focus-visible {
   outline: 2px solid var(--accent-color);
@@ -1799,7 +1859,7 @@ export default {
 
 .engines-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
 
@@ -1810,17 +1870,15 @@ export default {
   align-items: center;
   padding: 24px;
   background-color: var(--bg-card);
-  border: 2px solid var(--border-color);
-  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: var(--shadow-card);
-  gap: 16px;
+  gap: 18px;
 }
 
 .engine-card:hover {
   border-color: var(--border-hover);
-  box-shadow: var(--shadow);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .engine-card.editing {
@@ -2217,25 +2275,80 @@ export default {
   }
   
   .add-engine-card {
-    padding: 24px;
+    padding: 20px;
+  }
+
+  .cloud-sync-card {
+    padding: 20px;
   }
   
   .settings-content {
-    gap: 40px;
+    gap: 32px;
   }
 
-  /* 云同步移动端样式 */
+  .settings-container {
+    padding: 24px 16px 40px;
+  }
+
+  .settings-header-bar {
+    margin-bottom: 32px;
+  }
+
+  .settings-title {
+    font-size: 24px;
+  }
+
+  .section-title {
+    font-size: 17px;
+  }
+
+  .settings-content {
+    gap: 32px;
+  }
+
+  .settings-section {
+    gap: 16px;
+  }
+
+  .section-title {
+    font-size: 18px;
+  }
+
+  .add-engine-card {
+    padding: 20px;
+  }
+
+  .add-engine-form {
+    gap: 18px;
+  }
+
   .cloud-sync-card {
     padding: 20px;
+    gap: 16px;
   }
 
   .sync-type-selector {
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
   }
 
   .sync-type-option {
-    width: 100%;
+    padding: 14px 18px;
+  }
+
+  .sync-config-section {
+    gap: 16px;
+  }
+
+  .sync-status {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+  }
+
+  .status-item {
+    padding: 6px 0;
   }
 
   .sync-actions {
@@ -2247,6 +2360,20 @@ export default {
   .sync-disconnect-btn {
     width: 100%;
     justify-content: center;
+  }
+
+  .engines-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .engine-card {
+    padding: 18px;
+    gap: 14px;
+  }
+
+  .engines-filter-bar {
+    gap: 12px;
   }
 }
 </style>
