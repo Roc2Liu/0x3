@@ -253,7 +253,7 @@ DuckDuckGo:  https://duckduckgo.com/?q={query}
 │   ├── utils/              # 工具函数
 │   │   ├── notify.js       # 通知系统
 │   │   ├── cloudSync.js    # 云同步服务
-│   │   └── xfzhcav2vj9.js  # 加密工具（动态文件名）
+│   │   └── encrypt.js      # 加密工具
 │   ├── App.vue             # 根组件
 │   ├── main.js             # 入口文件
 │   └── style.css           # 全局样式

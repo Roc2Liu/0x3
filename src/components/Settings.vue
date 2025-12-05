@@ -442,7 +442,7 @@
 </template>
 
 <script>
-import { encryptData, decryptData } from '../utils/xfzhcav2vj9.js'
+import { encryptData, decryptData } from '../utils/encrypt.js'
 import { alert, confirm, success, error } from '../utils/notify.js'
 import {
   getSyncConfig,
