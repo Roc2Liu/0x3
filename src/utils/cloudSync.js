@@ -15,7 +15,7 @@ const GITHUB_API_BASE = 'https://api.github.com'
 /**
  * 坚果云 WebDAV 基础 URL
  */
-const JIANGUOYUN_DAV_BASE = 'https://dav.jianguoyun.com/dav'
+const JIANGUOYUN_DAV_BASE = 'https://dav.jianguoyun.com/dav/'
 
 /**
  * 生成带日期的文件名

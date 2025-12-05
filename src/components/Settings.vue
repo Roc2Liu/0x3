@@ -162,6 +162,8 @@
         <div class="cloud-sync-card">
           <div v-if="!cloudSyncConfig" class="cloud-sync-setup">
             <!-- 同步方式选择 -->
+            <!-- 暂时隐藏坚果云选项 -->
+            <!--
             <div class="form-group">
               <label>同步方式</label>
               <div class="sync-type-selector">
@@ -185,9 +187,11 @@
                 </label>
               </div>
             </div>
+            -->
 
             <!-- GitHub Gist 配置 -->
-            <div v-if="syncType === 'github'" class="sync-config-section">
+            <!-- 暂时只显示 GitHub Gist，隐藏坚果云选项 -->
+            <div class="sync-config-section">
               <div class="form-group">
                 <label for="github-token">GitHub Personal Access Token</label>
                 <input
@@ -218,7 +222,8 @@
               </div>
             </div>
 
-            <!-- 坚果云 WebDAV 配置 -->
+            <!-- 坚果云 WebDAV 配置 - 暂时隐藏 -->
+            <!--
             <div v-if="syncType === 'jianguoyun'" class="sync-config-section">
               <div class="form-group">
                 <label for="jianguoyun-username">坚果云用户名</label>
@@ -262,6 +267,7 @@
                 </small>
               </div>
             </div>
+            -->
 
             <button
               class="sync-setup-btn"
@@ -531,8 +537,8 @@ import {
   getLastSyncTime,
   syncUpload,
   syncDownload,
-  validateGitHubToken,
-  validateJianguoyunCredentials
+  validateGitHubToken
+  // validateJianguoyunCredentials // 暂时隐藏
 } from '../utils/cloudSync.js'
 
 export default {
@@ -562,12 +568,13 @@ export default {
       searchQuery: '',
       filterType: 'all', // 'all', 'default', 'custom'
       sortBy: 'name', // 'name', 'added'
-      syncType: 'github', // 'github' 或 'jianguoyun'
+      syncType: 'github', // 'github' 或 'jianguoyun' (暂时只支持 github)
       githubToken: '',
       gistId: '',
-      jianguoyunUsername: '',
-      jianguoyunPassword: '',
-      jianguoyunFilePath: '/0x3/',
+      // 暂时隐藏坚果云相关字段
+      // jianguoyunUsername: '',
+      // jianguoyunPassword: '',
+      // jianguoyunFilePath: '/0x3/',
       cloudSyncConfig: null,
       lastSyncTime: null,
       syncing: false
@@ -946,10 +953,13 @@ export default {
       if (this.cloudSyncConfig) {
         this.syncType = this.cloudSyncConfig.type || 'github'
         this.gistId = this.cloudSyncConfig.gistId || ''
-        this.jianguoyunUsername = this.cloudSyncConfig.username || ''
-        this.jianguoyunFilePath = this.cloudSyncConfig.filePath || '/0x3/'
+        // 暂时隐藏坚果云相关字段
+        // this.jianguoyunUsername = this.cloudSyncConfig.username || ''
+        // this.jianguoyunFilePath = this.cloudSyncConfig.filePath || '/0x3/'
       }
     },
+    // 暂时隐藏切换同步方式的方法
+    /*
     handleSyncTypeChange() {
       // 切换同步方式时清空相关输入
       if (this.syncType === 'github') {
@@ -960,12 +970,17 @@ export default {
         this.gistId = ''
       }
     },
+    */
     canSetupSync() {
+      // 暂时只支持 GitHub Gist
+      return !!this.githubToken?.trim()
+      /*
       if (this.syncType === 'github') {
         return !!this.githubToken?.trim()
       } else {
         return !!(this.jianguoyunUsername?.trim() && this.jianguoyunPassword?.trim() && this.jianguoyunFilePath?.trim())
       }
+      */
     },
     formatLastSyncTime(date) {
       if (!date) return '从未同步'
@@ -985,32 +1000,34 @@ export default {
     async handleSetupCloudSync() {
       this.syncing = true
       try {
-        if (this.syncType === 'github') {
-          if (!this.githubToken || !this.githubToken.trim()) {
-            await error('请输入 GitHub Token')
-            return
-          }
+        // 暂时只支持 GitHub Gist
+        if (!this.githubToken || !this.githubToken.trim()) {
+          await error('请输入 GitHub Token')
+          return
+        }
 
-          const result = await validateGitHubToken(this.githubToken.trim())
-          
-          if (!result.valid) {
-            await error(result.error || 'Token 验证失败')
-            return
-          }
+        const result = await validateGitHubToken(this.githubToken.trim())
+        
+        if (!result.valid) {
+          await error(result.error || 'Token 验证失败')
+          return
+        }
 
-          // 保存配置
-          const config = {
-            type: 'github',
-            token: this.githubToken.trim(),
-            username: result.username,
-            gistId: this.gistId.trim() || null
-          }
-          saveSyncConfig(config)
-          this.cloudSyncConfig = config
-          this.githubToken = '' // 清空输入框
-          this.gistId = config.gistId || ''
-          
-          await success(`已连接到 GitHub 用户：${result.username}`)
+        // 保存配置
+        const config = {
+          type: 'github',
+          token: this.githubToken.trim(),
+          username: result.username,
+          gistId: this.gistId.trim() || null
+        }
+        saveSyncConfig(config)
+        this.cloudSyncConfig = config
+        this.githubToken = '' // 清空输入框
+        this.gistId = config.gistId || ''
+        
+        await success(`已连接到 GitHub 用户：${result.username}`)
+        
+        /* 暂时隐藏坚果云 WebDAV 代码
         } else {
           // 坚果云 WebDAV
           if (!this.jianguoyunUsername?.trim() || !this.jianguoyunPassword?.trim()) {
@@ -1046,6 +1063,7 @@ export default {
           
           await success(`已连接到坚果云账号：${result.username}`)
         }
+        */
       } catch (err) {
         console.error('设置云同步失败:', err)
         await error('设置失败：' + err.message)
@@ -1165,9 +1183,10 @@ export default {
         this.syncType = 'github'
         this.githubToken = ''
         this.gistId = ''
-        this.jianguoyunUsername = ''
-        this.jianguoyunPassword = ''
-        this.jianguoyunFilePath = '/0x3/'
+        // 暂时隐藏坚果云相关字段
+        // this.jianguoyunUsername = ''
+        // this.jianguoyunPassword = ''
+        // this.jianguoyunFilePath = '/0x3/'
         await success('已断开云同步连接')
       }
     }
