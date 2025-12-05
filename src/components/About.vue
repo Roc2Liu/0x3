@@ -22,7 +22,7 @@
     <div class="about-content">
       <div class="about-intro">
         <p class="about-description">
-          一个美观、现代、完全无障碍的搜索引擎聚合导航网站。支持多引擎切换、自定义添加、主题切换、数据导入导出等功能。
+          一个美观、现代的搜索引擎聚合导航网站。支持多引擎切换、自定义添加、主题切换、数据导入导出、云同步等功能。
         </p>
         <div class="badges">
           <span class="badge badge-vue">Vue 3.4+</span>
@@ -42,16 +42,27 @@
             <li><strong>在线编辑</strong>：随时编辑搜索引擎的名称、图标和 URL</li>
             <li><strong>智能排序</strong>：支持按名称或添加时间排序</li>
             <li><strong>搜索过滤</strong>：快速查找已添加的搜索引擎</li>
+            <li><strong>实时验证</strong>：添加时自动检测重复的名称和 URL</li>
           </ul>
         </div>
 
         <div class="feature-group">
           <h3 class="feature-title">💾 数据管理</h3>
           <ul class="feature-list">
-            <li><strong>本地存储</strong>：所有设置数据存储在浏览器 LocalStorage，可离线访问和配置</li>
+            <li><strong>本地存储</strong>：所有数据存储在浏览器 LocalStorage，完全离线可用</li>
             <li><strong>导入导出</strong>：支持加密的搜索引擎配置导入导出</li>
             <li><strong>数据安全</strong>：基于域名和时间戳的动态加密，确保数据安全</li>
-            <li><strong>注意</strong>：搜索功能需要网络连接，无法离线搜索</li>
+            <li><strong>云同步</strong>：使用 GitHub Gist 在多个设备间同步配置</li>
+          </ul>
+        </div>
+
+        <div class="feature-group">
+          <h3 class="feature-title">☁️ 云同步</h3>
+          <ul class="feature-list">
+            <li><strong>GitHub Gist 集成</strong>：使用 GitHub Gist API 实现数据同步</li>
+            <li><strong>数据加密</strong>：上传前数据加密存储</li>
+            <li><strong>多设备支持</strong>：在多个设备间同步搜索引擎配置</li>
+            <li><strong>自动保存</strong>：首次上传后自动保存 Gist ID</li>
           </ul>
         </div>
 
@@ -70,7 +81,7 @@
           <ul class="feature-list">
             <li><strong>完美适配</strong>：桌面端和移动端都有优化的布局</li>
             <li><strong>触摸友好</strong>：移动端优化的触摸交互</li>
-            <li><strong>简洁界面</strong>：PC 端专注于搜索体验，界面简洁干净</li>
+            <li><strong>简洁界面</strong>：PC 端仅显示下拉菜单，保持界面简洁</li>
           </ul>
         </div>
 
@@ -86,17 +97,6 @@
           </ul>
         </div>
 
-        <div class="feature-group">
-          <h3 class="feature-title">♿ 无障碍支持</h3>
-          <ul class="feature-list">
-            <li><strong>WCAG 2.1 AA 级别</strong>：符合国际无障碍标准</li>
-            <li><strong>键盘导航</strong>：所有功能完全支持键盘操作</li>
-            <li><strong>屏幕阅读器</strong>：完整的 ARIA 标签和语义化 HTML</li>
-            <li><strong>焦点管理</strong>：智能的焦点陷阱和焦点恢复</li>
-            <li><strong>高对比度</strong>：支持系统高对比度模式</li>
-            <li><strong>减少动画</strong>：尊重用户的减少动画偏好</li>
-          </ul>
-        </div>
       </section>
 
       <section class="about-section" aria-labelledby="usage-title">
@@ -116,8 +116,6 @@
           <ul class="feature-list">
             <li>点击搜索框左侧的引擎选择器</li>
             <li>从下拉列表中选择目标搜索引擎</li>
-            <li>支持键盘导航：<kbd>↑</kbd> / <kbd>↓</kbd> 选择，<kbd>Enter</kbd> 确认</li>
-            <li>支持搜索过滤：当引擎数量较多时，可以在下拉列表中输入关键词快速查找</li>
           </ul>
         </div>
 
@@ -134,6 +132,7 @@
             </li>
             <li>点击"添加"按钮完成添加</li>
           </ol>
+          <p class="faq-answer">💡 <strong>提示</strong>：系统会自动检测重复的名称和 URL，并在输入时实时提示。</p>
           <div class="code-example">
             <p><strong>URL 格式示例：</strong></p>
             <pre><code>Google:      https://www.google.com/search?q={query}
@@ -143,6 +142,45 @@ GitHub:      https://github.com/search?q={query}
 YouTube:     https://www.youtube.com/results?search_query={query}
 DuckDuckGo:  https://duckduckgo.com/?q={query}</code></pre>
           </div>
+        </div>
+
+        <div class="usage-item">
+          <h3 class="usage-subtitle">导入导出</h3>
+          <ul class="feature-list">
+            <li><strong>导出配置</strong>：进入设置页面，点击"导出"按钮，浏览器会自动下载加密的配置文件</li>
+            <li><strong>导入配置</strong>：点击"导入"按钮，选择之前导出的配置文件，确认导入即可</li>
+          </ul>
+          <p class="faq-answer">🔒 <strong>安全说明</strong>：配置文件使用基于域名和时间戳的动态加密，只有本网站可以正确解析。</p>
+        </div>
+
+        <div class="usage-item">
+          <h3 class="usage-subtitle">云同步</h3>
+          <ol class="usage-steps">
+            <li><strong>创建 GitHub Personal Access Token</strong>
+              <ul class="feature-list">
+                <li>访问：<a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">https://github.com/settings/tokens</a></li>
+                <li>点击 "Generate new token (classic)"</li>
+                <li>命名：<code>0x3 Search Engine Sync</code></li>
+                <li>选择权限：勾选 <code>gist</code> 权限</li>
+                <li>生成并复制 Token</li>
+              </ul>
+            </li>
+            <li><strong>在网站中配置</strong>
+              <ul class="feature-list">
+                <li>进入设置页面，找到"云同步"区域</li>
+                <li>输入 GitHub Token</li>
+                <li>（可选）如果已有 Gist ID，填写后可下载</li>
+                <li>点击"验证并保存"</li>
+              </ul>
+            </li>
+            <li><strong>使用云同步</strong>
+              <ul class="feature-list">
+                <li><strong>上传到云端</strong>：点击"上传到云端"按钮，将当前搜索引擎配置上传</li>
+                <li><strong>从云端下载</strong>：在其他设备上配置相同 Token 和 Gist ID，点击"从云端下载"</li>
+              </ul>
+            </li>
+          </ol>
+          <p class="faq-answer">💡 <strong>提示</strong>：首次上传后，Gist ID 会自动保存。数据上传前会加密存储。</p>
         </div>
       </section>
 
@@ -184,71 +222,27 @@ DuckDuckGo:  https://duckduckgo.com/?q={query}</code></pre>
         </div>
       </section>
 
-      <section class="about-section" aria-labelledby="shortcuts-title">
-        <h2 id="shortcuts-title" class="section-title">⌨️ 键盘快捷键</h2>
-        <div class="shortcuts-table">
-          <table>
-            <thead>
-              <tr>
-                <th>快捷键</th>
-                <th>功能</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><kbd>Tab</kbd></td>
-                <td>切换到下一个可聚焦元素</td>
-              </tr>
-              <tr>
-                <td><kbd>Shift</kbd> + <kbd>Tab</kbd></td>
-                <td>切换到上一个可聚焦元素</td>
-              </tr>
-              <tr>
-                <td><kbd>Enter</kbd></td>
-                <td>提交搜索 / 确认选择</td>
-              </tr>
-              <tr>
-                <td><kbd>Space</kbd></td>
-                <td>触发按钮 / 选择项</td>
-              </tr>
-              <tr>
-                <td><kbd>Esc</kbd></td>
-                <td>关闭弹窗 / 关闭下拉菜单</td>
-              </tr>
-              <tr>
-                <td><kbd>↑</kbd> / <kbd>↓</kbd></td>
-                <td>在下拉列表中导航</td>
-              </tr>
-              <tr>
-                <td><kbd>Home</kbd> / <kbd>End</kbd></td>
-                <td>跳转到列表首/尾</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
       <section class="about-section" aria-labelledby="tech-title">
         <h2 id="tech-title" class="section-title">🛠️ 技术栈</h2>
         <ul class="tech-list">
           <li><strong>Vue 3.4+</strong> - 渐进式 JavaScript 框架（Composition API）</li>
           <li><strong>Vite 5.0+</strong> - 下一代前端构建工具</li>
-          <li><strong>PWA</strong> - 渐进式 Web 应用（Service Worker、Web App Manifest）</li>
+          <li><strong>vite-plugin-pwa</strong> - PWA 支持插件</li>
+          <li><strong>Workbox</strong> - Service Worker 工具库</li>
           <li><strong>CSS Variables</strong> - 动态主题切换</li>
           <li><strong>LocalStorage API</strong> - 本地数据存储</li>
+          <li><strong>GitHub Gist API</strong> - 云同步服务</li>
         </ul>
       </section>
 
       <section class="about-section" aria-labelledby="privacy-title">
         <h2 id="privacy-title" class="section-title">🔒 隐私与安全</h2>
         <ul class="feature-list">
-          <li><strong>本地存储</strong>：所有设置数据存储在浏览器本地，不会上传到任何服务器</li>
-          <li><strong>离线访问</strong>：应用界面和设置功能可在离线状态下访问</li>
+          <li><strong>完全离线</strong>：所有数据存储在浏览器本地，不会上传到任何服务器（除云同步外）</li>
           <li><strong>无追踪</strong>：不使用任何分析或追踪工具</li>
           <li><strong>数据加密</strong>：导入导出的配置文件使用动态密钥加密</li>
           <li><strong>域名绑定</strong>：加密数据与域名绑定，增强安全性</li>
-          <li><strong>PWA 离线缓存</strong>：Service Worker 仅缓存静态资源，不存储用户数据</li>
-          <li><strong>搜索需要网络</strong>：搜索功能需要连接到目标搜索引擎服务器</li>
+          <li><strong>私有存储</strong>：云同步数据存储在私有 GitHub Gist 中</li>
         </ul>
       </section>
 
@@ -262,12 +256,22 @@ DuckDuckGo:  https://duckduckgo.com/?q={query}</code></pre>
 
         <div class="faq-item">
           <h3 class="faq-question">Q: 数据存储在哪里？</h3>
-          <p class="faq-answer">A: 所有设置数据（搜索引擎列表、当前引擎、主题设置）都存储在浏览器的 LocalStorage 中，可以在离线状态下访问和配置，不会上传到服务器。但是搜索功能需要网络连接，无法离线搜索。</p>
+          <p class="faq-answer">A: 所有数据（搜索引擎列表、当前引擎、主题设置）都存储在浏览器的 LocalStorage 中，完全离线可用。如果启用了云同步，数据会加密存储在 GitHub Gist 中。</p>
+        </div>
+
+        <div class="faq-item">
+          <h3 class="faq-question">Q: 云同步如何工作？</h3>
+          <p class="faq-answer">A: 云同步使用 GitHub Gist API 存储加密的配置文件。首次上传会创建一个私有 Gist，之后可以使用相同的 Token 和 Gist ID 在其他设备上下载配置。</p>
         </div>
 
         <div class="faq-item">
           <h3 class="faq-question">Q: 支持哪些图标格式？</h3>
-          <p class="faq-answer">A: 支持两种图标格式：<strong>Emoji</strong>（直接输入 Emoji 字符）和 <strong>SVG 图片</strong>（通过上传按钮选择 SVG 格式的图片文件）。</p>
+          <p class="faq-answer">A: 支持三种图标格式：<strong>Emoji</strong>（直接输入 Emoji 字符）、<strong>SVG 文件</strong>（通过上传按钮选择 SVG 格式的图片文件）和 <strong>SVG 路径</strong>（使用 <code>/path/to/file.svg</code> 格式的路径）。</p>
+        </div>
+
+        <div class="faq-item">
+          <h3 class="faq-question">Q: 搜索功能需要网络吗？</h3>
+          <p class="faq-answer">A: 是的。虽然应用支持离线访问和配置，但实际的搜索功能需要网络连接，因为搜索请求会发送到相应的搜索引擎服务器。</p>
         </div>
 
         <div class="faq-item">
@@ -575,46 +579,6 @@ kbd {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.shortcuts-table {
-  overflow-x: auto;
-}
-
-.shortcuts-table table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: var(--bg-card);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.shortcuts-table thead {
-  background-color: var(--bg-hover);
-}
-
-.shortcuts-table th,
-.shortcuts-table td {
-  padding: 12px 16px;
-  text-align: left;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.shortcuts-table th {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.shortcuts-table td {
-  color: var(--text-primary);
-}
-
-.shortcuts-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.shortcuts-table tbody tr:hover {
-  background-color: var(--bg-hover);
-}
-
 .tech-list {
   list-style: none;
   padding: 0;
@@ -712,24 +676,7 @@ kbd {
   .about-description {
     font-size: 16px;
   }
-
-  .shortcuts-table {
-    font-size: 14px;
-  }
-
-  .shortcuts-table th,
-  .shortcuts-table td {
-    padding: 8px 12px;
-  }
 }
 
-/* 无障碍：减少动画（尊重用户偏好） */
-@media (prefers-reduced-motion: reduce) {
-  .about-container,
-  .close-btn,
-  .badge {
-    transition: none !important;
-  }
-}
 </style>
 
