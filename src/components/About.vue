@@ -357,20 +357,22 @@ export default {
 .about-header {
   position: sticky;
   top: 0;
-  background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
   padding: 16px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   z-index: 1002;
-  backdrop-filter: blur(12px);
-  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(var(--frosted-blur));
+  -webkit-backdrop-filter: blur(var(--frosted-blur));
+  background-color: var(--frosted-bg-light);
   box-shadow: var(--shadow-sm);
+  transition: background-color var(--transition-base) var(--transition-timing),
+              box-shadow var(--transition-base) var(--transition-timing);
 }
 
 [data-theme="dark"] .about-header {
-  background-color: rgba(22, 27, 34, 0.85);
+  background-color: var(--frosted-bg-dark);
 }
 
 .about-title {
