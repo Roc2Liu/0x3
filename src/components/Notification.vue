@@ -180,7 +180,8 @@ export default {
   justify-content: center;
   z-index: 10000;
   padding: 20px;
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(var(--frosted-blur-small));
+  -webkit-backdrop-filter: blur(var(--frosted-blur-small));
 }
 
 .notification-dialog {
