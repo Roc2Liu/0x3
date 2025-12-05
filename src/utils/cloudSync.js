@@ -1,6 +1,6 @@
 /**
  * 云同步服务
- * 使用 GitHub Gist API 实现搜索引擎配置的云同步
+ * 支持 GitHub Gist 和坚果云 WebDAV 两种同步方式
  */
 
 const GIST_FILENAME = '0x3-search-engines.json'
@@ -13,12 +13,30 @@ const LAST_SYNC_KEY = '0x3-last-sync-time'
 const GITHUB_API_BASE = 'https://api.github.com'
 
 /**
+ * 坚果云 WebDAV 基础 URL
+ */
+const JIANGUOYUN_DAV_BASE = 'https://dav.jianguoyun.com/dav'
+
+/**
+ * 生成带日期的文件名
+ * 格式：YY-MM-DD-search-engines.json
+ * @returns {string} 文件名
+ */
+function generateFileNameWithDate() {
+  const now = new Date()
+  const year = String(now.getFullYear()).slice(-2) // 后两位年份
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}-search-engines.json`
+}
+
+/**
  * 获取存储的同步配置
  */
 export function getSyncConfig() {
   const config = localStorage.getItem(SYNC_CONFIG_KEY)
   if (!config) return null
-  
+
   try {
     return JSON.parse(config)
   } catch (e) {
@@ -73,7 +91,7 @@ function saveLastSyncTime() {
  */
 export async function uploadToGist(token, gistId, encryptedData) {
   try {
-    const url = gistId 
+    const url = gistId
       ? `${GITHUB_API_BASE}/gists/${gistId}`
       : `${GITHUB_API_BASE}/gists`
 
@@ -215,34 +233,235 @@ export async function validateGitHubToken(token) {
 }
 
 /**
+ * 创建 Basic Auth 头部
+ * @param {string} username - 用户名
+ * @param {string} password - 密码
+ * @returns {string} Authorization 头部值
+ */
+function createBasicAuth(username, password) {
+  const credentials = btoa(`${username}:${password}`)
+  return `Basic ${credentials}`
+}
+
+/**
+ * 上传数据到坚果云 WebDAV
+ * @param {string} username - 坚果云用户名
+ * @param {string} password - 坚果云应用密码
+ * @param {string} filePath - 文件路径（如：/0x3/25-12-05search-engines.json）
+ * @param {string} encryptedData - 加密后的数据
+ * @param {boolean} useDateInFilename - 是否在文件名中使用日期（默认 true）
+ * @returns {Promise<{success: boolean, message?: string, filePath?: string}>}
+ */
+export async function uploadToJianguoyun(username, password, filePath, encryptedData, useDateInFilename = true) {
+  try {
+    let finalPath = filePath
+
+    // 如果启用日期文件名，自动生成带日期的文件名
+    if (useDateInFilename) {
+      const fileName = generateFileNameWithDate()
+      // 如果路径是目录（以 / 结尾），直接添加文件名
+      if (filePath.endsWith('/')) {
+        finalPath = `${filePath}${fileName}`
+      } else {
+        // 如果路径包含文件名，替换为带日期的文件名
+        const pathParts = filePath.split('/')
+        const directory = pathParts.slice(0, -1).join('/') || '/'
+        finalPath = `${directory}/${fileName}`
+      }
+    }
+
+    // 确保文件路径以 / 开头
+    const normalizedPath = finalPath.startsWith('/') ? finalPath : `/${finalPath}`
+    const url = `${JIANGUOYUN_DAV_BASE}${normalizedPath}`
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': createBasicAuth(username, password),
+        'Content-Type': 'application/json; charset=utf-8'
+      },
+      body: encryptedData
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('用户名或密码错误，请检查应用密码')
+      }
+      if (response.status === 403) {
+        throw new Error('没有访问权限，请检查应用密码权限')
+      }
+      if (response.status === 404) {
+        throw new Error('路径不存在，请检查文件路径')
+      }
+      throw new Error(`上传失败：HTTP ${response.status}`)
+    }
+
+    saveLastSyncTime()
+    return { success: true, filePath: normalizedPath }
+  } catch (error) {
+    console.error('Upload to Jianguoyun failed:', error)
+    throw error
+  }
+}
+
+/**
+ * 从目录路径生成当前日期的文件路径
+ * @param {string} directory - 目录路径
+ * @returns {string} 完整的文件路径
+ */
+function getCurrentDateFilePath(directory) {
+  const fileName = generateFileNameWithDate()
+  const normalizedDir = directory.endsWith('/') ? directory : `${directory}/`
+  return `${normalizedDir}${fileName}`
+}
+
+/**
+ * 从坚果云 WebDAV 下载数据
+ * @param {string} username - 坚果云用户名
+ * @param {string} password - 坚果云应用密码
+ * @param {string} filePath - 文件路径或目录路径
+ * @returns {Promise<string>} 加密后的数据
+ */
+export async function downloadFromJianguoyun(username, password, filePath) {
+  try {
+    let finalPath = filePath
+
+    // 如果路径是目录（以 / 结尾），使用当前日期的文件名
+    if (filePath.endsWith('/')) {
+      finalPath = getCurrentDateFilePath(filePath)
+    }
+
+    // 确保文件路径以 / 开头
+    const normalizedPath = finalPath.startsWith('/') ? finalPath : `/${finalPath}`
+    const url = `${JIANGUOYUN_DAV_BASE}${normalizedPath}`
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': createBasicAuth(username, password)
+      }
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('用户名或密码错误，请检查应用密码')
+      }
+      if (response.status === 403) {
+        throw new Error('没有访问权限，请检查应用密码权限')
+      }
+      if (response.status === 404) {
+        throw new Error('文件不存在，请先上传一次')
+      }
+      throw new Error(`下载失败：HTTP ${response.status}`)
+    }
+
+    const data = await response.text()
+    saveLastSyncTime()
+    return data
+  } catch (error) {
+    console.error('Download from Jianguoyun failed:', error)
+    throw error
+  }
+}
+
+/**
+ * 验证坚果云 WebDAV 凭据是否有效
+ * @param {string} username - 坚果云用户名
+ * @param {string} password - 坚果云应用密码
+ * @returns {Promise<{valid: boolean, username?: string, error?: string}>}
+ */
+export async function validateJianguoyunCredentials(username, password) {
+  try {
+    // 使用 PROPFIND 请求验证凭据
+    const response = await fetch(`${JIANGUOYUN_DAV_BASE}/`, {
+      method: 'PROPFIND',
+      headers: {
+        'Authorization': createBasicAuth(username, password),
+        'Depth': '0'
+      }
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        return { valid: false, error: '用户名或密码错误，请检查应用密码' }
+      }
+      if (response.status === 403) {
+        return { valid: false, error: '没有访问权限，请检查应用密码权限' }
+      }
+      return { valid: false, error: '验证失败' }
+    }
+
+    return {
+      valid: true,
+      username: username
+    }
+  } catch (error) {
+    console.error('Jianguoyun validation failed:', error)
+    return {
+      valid: false,
+      error: error.message || '网络错误，请检查连接'
+    }
+  }
+}
+
+/**
  * 云同步：上传数据
  * @param {string} encryptedData - 加密后的数据
  * @returns {Promise<{success: boolean, message: string, gistId?: string}>}
  */
 export async function syncUpload(encryptedData) {
   const config = getSyncConfig()
-  if (!config || !config.token) {
-    throw new Error('未配置云同步，请先设置 GitHub Token')
+  if (!config) {
+    throw new Error('未配置云同步')
   }
 
   try {
-    const result = await uploadToGist(
-      config.token,
-      config.gistId || null,
-      encryptedData
-    )
+    if (config.type === 'jianguoyun') {
+      // 坚果云 WebDAV
+      if (!config.username || !config.password || !config.filePath) {
+        throw new Error('坚果云配置不完整，请检查用户名、密码和文件路径')
+      }
 
-    // 更新配置中的 Gist ID
-    if (!config.gistId) {
-      config.gistId = result.gistId
-      saveSyncConfig(config)
-    }
+      const result = await uploadToJianguoyun(
+        config.username,
+        config.password,
+        config.filePath,
+        encryptedData,
+        true // 使用日期文件名
+      )
 
-    return {
-      success: true,
-      message: '上传成功',
-      gistId: result.gistId,
-      url: result.url
+      // 保存目录路径（不保存完整文件路径，因为文件名包含日期）
+      // 下载时会自动查找最新的文件
+
+      return {
+        success: true,
+        message: '上传成功',
+        filePath: result.filePath
+      }
+    } else {
+      // GitHub Gist（默认）
+      if (!config.token) {
+        throw new Error('未配置云同步，请先设置 GitHub Token')
+      }
+
+      const result = await uploadToGist(
+        config.token,
+        config.gistId || null,
+        encryptedData
+      )
+
+      // 更新配置中的 Gist ID
+      if (!config.gistId) {
+        config.gistId = result.gistId
+        saveSyncConfig(config)
+      }
+
+      return {
+        success: true,
+        message: '上传成功',
+        gistId: result.gistId,
+        url: result.url
+      }
     }
   } catch (error) {
     return {
@@ -258,15 +477,38 @@ export async function syncUpload(encryptedData) {
  */
 export async function syncDownload() {
   const config = getSyncConfig()
-  if (!config || !config.token || !config.gistId) {
-    throw new Error('未配置云同步或缺少 Gist ID')
+  if (!config) {
+    throw new Error('未配置云同步')
   }
 
   try {
-    const data = await downloadFromGist(config.token, config.gistId)
-    return {
-      success: true,
-      data: data
+    if (config.type === 'jianguoyun') {
+      // 坚果云 WebDAV
+      if (!config.username || !config.password || !config.filePath) {
+        throw new Error('坚果云配置不完整，请检查用户名、密码和文件路径')
+      }
+
+      const data = await downloadFromJianguoyun(
+        config.username,
+        config.password,
+        config.filePath
+      )
+
+      return {
+        success: true,
+        data: data
+      }
+    } else {
+      // GitHub Gist（默认）
+      if (!config.token || !config.gistId) {
+        throw new Error('未配置云同步或缺少 Gist ID')
+      }
+
+      const data = await downloadFromGist(config.token, config.gistId)
+      return {
+        success: true,
+        data: data
+      }
     }
   } catch (error) {
     return {
