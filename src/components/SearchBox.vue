@@ -371,15 +371,15 @@ export default {
 
 .search-container {
   width: 100%;
-  max-width: 720px;
+  max-width: 800px;
   margin: 0 auto;
-  animation: fadeInUp 0.5s var(--transition-timing);
+  animation: fadeInUp var(--transition-slow) var(--transition-timing);
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(var(--spacing-lg));
   }
   to {
     opacity: 1;
@@ -391,7 +391,8 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
+  width: 100%;
 }
 
 /* 桌面端布局 */
@@ -410,21 +411,33 @@ export default {
   align-items: center;
   gap: var(--spacing-sm);
   padding: var(--spacing-md) var(--spacing-lg);
-  background-color: var(--bg-card);
+  backdrop-filter: blur(var(--frosted-blur));
+  -webkit-backdrop-filter: blur(var(--frosted-blur));
+  background-color: var(--frosted-bg-light-transparent);
   border: 2px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-base) var(--transition-timing);
   user-select: none;
   white-space: nowrap;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--frosted-shadow-light-transparent);
   min-width: 100px;
+}
+
+[data-theme="dark"] .engine-selector {
+  background-color: var(--frosted-bg-dark-transparent);
+  box-shadow: var(--frosted-shadow-dark-transparent);
 }
 
 .engine-selector:hover {
   border-color: var(--border-hover);
-  box-shadow: var(--shadow);
-  background-color: var(--bg-hover);
+  box-shadow: var(--frosted-shadow-light-transparent);
+  background-color: var(--frosted-bg-light);
+}
+
+[data-theme="dark"] .engine-selector:hover {
+  background-color: var(--frosted-bg-dark);
+  box-shadow: var(--frosted-shadow-dark-transparent);
 }
 
 .engine-selector:focus-visible {
@@ -452,7 +465,7 @@ export default {
 .dropdown-arrow {
   font-size: 10px;
   color: var(--text-secondary);
-  transition: transform 0.2s ease;
+  transition: transform var(--transition-base) var(--transition-timing);
   display: block;
 }
 
@@ -465,34 +478,34 @@ export default {
   border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  z-index: 1000;
+  z-index: var(--z-dropdown);
   max-height: 400px;
   overflow-y: auto;
-  animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 8px;
+  animation: slideDown var(--transition-base) var(--transition-timing);
+  padding: var(--spacing-sm);
   display: flex;
   flex-direction: column;
 }
 
 .engine-list-search {
-  padding: 8px;
+  padding: var(--spacing-sm);
   border-bottom: 1px solid var(--border-color);
-  margin-bottom: 4px;
+  margin-bottom: var(--spacing-xs);
   position: sticky;
   top: 0;
   background-color: var(--bg-card);
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .engine-filter-input {
   width: 100%;
-  padding: 8px 12px;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-size: 14px;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) var(--transition-timing);
 }
 
 .engine-filter-input:focus {
@@ -507,7 +520,7 @@ export default {
 }
 
 .engine-list-empty {
-  padding: 24px;
+  padding: var(--spacing-lg);
   text-align: center;
   color: var(--text-secondary);
   font-size: 14px;
@@ -516,7 +529,7 @@ export default {
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(calc(-1 * var(--spacing-sm)));
   }
   to {
     opacity: 1;
@@ -528,10 +541,10 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
-  padding: 12px 16px;
+  padding: var(--spacing-md) var(--spacing-md);
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 10px;
+  transition: all var(--transition-fast) var(--transition-timing);
+  border-radius: var(--radius-md);
   font-size: 15px;
   outline: none;
 }
@@ -580,33 +593,52 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  background-color: var(--bg-card);
+  backdrop-filter: blur(var(--frosted-blur));
+  -webkit-backdrop-filter: blur(var(--frosted-blur));
+  background-color: var(--frosted-bg-light-transparent);
   border: 2px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   padding: var(--spacing-xs);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--frosted-shadow-light-transparent);
   transition: all var(--transition-base) var(--transition-timing);
+}
+
+[data-theme="dark"] .search-form {
+  background-color: var(--frosted-bg-dark-transparent);
+  box-shadow: var(--frosted-shadow-dark-transparent);
 }
 
 .search-form:hover {
   border-color: var(--border-hover);
-  box-shadow: var(--shadow);
+  box-shadow: var(--frosted-shadow-light-transparent);
+  background-color: var(--frosted-bg-light);
+}
+
+[data-theme="dark"] .search-form:hover {
+  background-color: var(--frosted-bg-dark);
+  box-shadow: var(--frosted-shadow-dark-transparent);
 }
 
 .search-form:focus-within {
   border-color: var(--accent-color);
-  box-shadow: 0 0 0 4px var(--focus-ring), var(--shadow);
+  box-shadow: 0 0 0 4px var(--focus-ring), var(--frosted-shadow-light-transparent);
+  background-color: var(--frosted-bg-light);
+}
+
+[data-theme="dark"] .search-form:focus-within {
+  box-shadow: 0 0 0 4px var(--focus-ring), var(--frosted-shadow-dark-transparent);
+  background-color: var(--frosted-bg-dark);
 }
 
 .search-input {
   flex: 1;
-  padding: 18px 24px;
-  font-size: 18px;
+  padding: var(--spacing-md) var(--spacing-lg);
+  font-size: 16px;
   border: none;
   background: transparent;
   color: var(--text-primary);
   outline: none;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .search-input::placeholder {
@@ -664,14 +696,29 @@ export default {
   .mobile-layout {
     display: flex;
     width: 100%;
-    background-color: var(--bg-card);
+    backdrop-filter: blur(var(--frosted-blur));
+    -webkit-backdrop-filter: blur(var(--frosted-blur));
+    background-color: var(--frosted-bg-light-transparent);
     border: 2px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 6px;
-    box-shadow: var(--shadow-card);
+    padding: var(--spacing-xs);
+    box-shadow: var(--frosted-shadow-light-transparent);
     transition: all var(--transition-base) var(--transition-timing);
-    gap: 8px;
+    gap: var(--spacing-sm);
     align-items: center;
+  }
+
+  [data-theme="dark"] .mobile-layout {
+    background-color: var(--frosted-bg-dark-transparent);
+    box-shadow: var(--frosted-shadow-dark-transparent);
+  }
+
+  .mobile-layout:hover {
+    background-color: var(--frosted-bg-light);
+  }
+
+  [data-theme="dark"] .mobile-layout:hover {
+    background-color: var(--frosted-bg-dark);
   }
   
   .mobile-layout:focus-within {
@@ -775,8 +822,8 @@ export default {
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    animation: fadeIn 0.2s ease;
+    z-index: calc(var(--z-dropdown) - 1);
+    animation: fadeIn var(--transition-base) var(--transition-timing);
   }
   
   @keyframes fadeIn {
@@ -798,12 +845,12 @@ export default {
     min-width: auto;
     width: 100%;
     max-height: 60vh;
-    border-radius: 20px 20px 0 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     border-bottom: none;
     border-left: none;
     border-right: none;
-    z-index: 1000;
-    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: var(--z-dropdown);
+    animation: slideUp var(--transition-slow) var(--transition-timing);
   }
   
   @keyframes slideUp {
@@ -819,7 +866,7 @@ export default {
   
   /* 移动端列表项 */
   .engine-item {
-    padding: 14px 20px;
+    padding: var(--spacing-md) var(--spacing-lg);
     font-size: 16px;
   }
   

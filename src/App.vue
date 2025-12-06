@@ -17,11 +17,17 @@
           <button 
             class="theme-toggle" 
             @click="toggleTheme" 
-            :aria-label="themeText"
-            :title="themeText"
+            :aria-label="themeToggleText"
+            :title="themeToggleText"
           >
-            <!-- 浅色模式图标 -->
-            <svg v-if="theme === 'light'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <!-- 自动模式：显示字母 A -->
+            <span v-if="theme === 'auto'" class="auto-icon" aria-hidden="true">A</span>
+            <!-- 下一个主题是 dark：显示月亮图标 -->
+            <svg v-else-if="nextTheme === 'dark'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <!-- 下一个主题是 light：显示太阳图标 -->
+            <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="5"></circle>
               <line x1="12" y1="1" x2="12" y2="3"></line>
               <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -32,20 +38,12 @@
               <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
               <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
             </svg>
-            <!-- 深色模式图标 -->
-            <svg v-else-if="theme === 'dark'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-            <!-- 自动模式图标：半黑半白圆圈 -->
-            <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.2"></circle>
-              <path d="M12 2A10 10 0 0 0 12 22" fill="currentColor" opacity="0.8"></path>
-            </svg>
-            <span class="visually-hidden">{{ themeText }}</span>
+            <span class="visually-hidden">{{ themeToggleText }}</span>
           </button>
           <button 
+            v-if="showAboutButton"
             class="about-btn" 
-            @click="showAbout = !showAbout" 
+            @click="handleAboutClick" 
             :aria-label="showAbout ? '关闭关于' : '打开关于'"
             :aria-expanded="showAbout"
             :title="showAbout ? '关闭关于' : '打开关于'"
@@ -131,6 +129,54 @@ export default {
     const showSettings = ref(false)
     const showAbout = ref(false)
     const backgroundImage = ref(null)
+    
+    // 关于按钮显示控制：只在首次访问时显示
+    const ABOUT_SEEN_KEY = '0x3-about-seen'
+    const showAboutButton = ref(!localStorage.getItem(ABOUT_SEEN_KEY))
+    
+    // 获取当前实际显示的主题（考虑 auto 模式）
+    const currentDisplayTheme = computed(() => {
+      if (theme.value === 'auto') {
+        // 根据时间判断：20:00-06:00 为 dark，06:00-20:00 为 light
+        const now = new Date()
+        const hour = now.getHours()
+        return (hour >= 20 || hour < 6) ? 'dark' : 'light'
+      }
+      return theme.value
+    })
+    
+    // 获取下一个主题（用于显示图标和提示）
+    const nextTheme = computed(() => {
+      const themes = ['light', 'dark', 'auto']
+      const currentIndex = themes.indexOf(theme.value)
+      const nextIndex = (currentIndex + 1) % themes.length
+      return themes[nextIndex]
+    })
+    
+    // 获取主题切换提示文本（显示点击后将要切换到的模式）
+    const themeToggleText = computed(() => {
+      if (theme.value === 'auto') {
+        return '自动模式（20:00-06:00 暗色）'
+      }
+      // 根据下一个主题显示提示
+      if (nextTheme.value === 'dark') {
+        return '切换到夜晚模式'
+      } else if (nextTheme.value === 'light') {
+        return '切换到白天模式'
+      } else {
+        return '切换到自动模式'
+      }
+    })
+    
+    // 处理关于按钮点击
+    const handleAboutClick = () => {
+      showAbout.value = !showAbout.value
+      // 首次点击后，标记为已看过，隐藏按钮
+      if (!localStorage.getItem(ABOUT_SEEN_KEY)) {
+        localStorage.setItem(ABOUT_SEEN_KEY, 'true')
+        showAboutButton.value = false
+      }
+    }
 
     onMounted(async () => {
       initEngines()
@@ -310,6 +356,11 @@ export default {
       handleUpdateEngine,
       currentEngineName,
       showAbout,
+      showAboutButton,
+      currentDisplayTheme,
+      nextTheme,
+      themeToggleText,
+      handleAboutClick,
       isImageIcon,
       handleSkipToMain,
       backgroundImage,
@@ -352,10 +403,10 @@ export default {
   left: 0;
   background: var(--accent-color);
   color: white;
-  padding: 8px 16px;
+  padding: var(--spacing-sm) var(--spacing-md);
   text-decoration: none;
-  z-index: 1000;
-  border-radius: 0 0 4px 0;
+  z-index: var(--z-tooltip);
+  border-radius: 0 0 var(--radius-xs) 0;
   font-weight: 500;
 }
 
@@ -377,10 +428,10 @@ export default {
 
 .header {
   border-bottom: 1px solid var(--border-color);
-  padding: var(--spacing-md) 0;
+  padding: var(--spacing-lg) 0;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: var(--z-sticky);
   backdrop-filter: blur(var(--frosted-blur));
   -webkit-backdrop-filter: blur(var(--frosted-blur));
   background-color: var(--frosted-bg-light);
@@ -451,6 +502,17 @@ export default {
   flex-shrink: 0;
 }
 
+.theme-toggle .auto-icon {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
 .about-btn:hover,
 .theme-toggle:hover,
 .settings-btn:hover {
@@ -473,14 +535,16 @@ export default {
 
 .main-content {
   flex: 1;
-  padding: var(--spacing-3xl) var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
   scroll-margin-top: 0;
   transition: padding var(--transition-base) var(--transition-timing);
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .main-content:focus {
@@ -492,15 +556,17 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 200px);
-  padding: var(--spacing-2xl) 0;
-  animation: fadeIn 0.4s var(--transition-timing);
+  min-height: calc(100vh - 80px);
+  padding: var(--spacing-4xl) var(--spacing-lg);
+  animation: fadeIn var(--transition-slow) var(--transition-timing);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(var(--spacing-md));
   }
   to {
     opacity: 1;
@@ -513,12 +579,9 @@ export default {
     padding: 0 var(--spacing-md);
   }
   
-  .main-content {
-    padding: var(--spacing-2xl) var(--spacing-md);
-  }
-  
   .home-view {
-    min-height: 50vh;
+    min-height: calc(100vh - 70px);
+    padding: var(--spacing-2xl) var(--spacing-md);
   }
 }
 </style>

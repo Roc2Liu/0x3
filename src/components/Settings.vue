@@ -227,8 +227,6 @@
         <div class="cloud-sync-card">
           <div v-if="!cloudSyncConfig" class="cloud-sync-setup">
             <!-- 同步方式选择 -->
-            <!-- 暂时隐藏坚果云选项 -->
-            <!--
             <div class="form-group">
               <label>同步方式</label>
               <div class="sync-type-selector">
@@ -245,18 +243,28 @@
                   <input
                     type="radio"
                     v-model="syncType"
+                    value="anonymous"
+                    @change="handleSyncTypeChange"
+                  />
+                  <span>匿名口令同步</span>
+                </label>
+                <!-- 暂时隐藏坚果云选项 -->
+                <!--
+                <label class="sync-type-option">
+                  <input
+                    type="radio"
+                    v-model="syncType"
                     value="jianguoyun"
                     @change="handleSyncTypeChange"
                   />
                   <span>坚果云 WebDAV</span>
                 </label>
+                -->
               </div>
             </div>
-            -->
 
             <!-- GitHub Gist 配置 -->
-            <!-- 暂时只显示 GitHub Gist，隐藏坚果云选项 -->
-            <div class="sync-config-section">
+            <div v-if="syncType === 'github'" class="sync-config-section">
               <div class="form-group">
                 <label for="github-token">GitHub Personal Access Token</label>
                 <input
@@ -284,6 +292,24 @@
                   class="token-input"
                 />
                 <small class="form-hint">如果已有 Gist ID，填写后可下载该 Gist 的数据</small>
+              </div>
+            </div>
+
+            <!-- 匿名口令同步配置 -->
+            <div v-if="syncType === 'anonymous'" class="sync-config-section">
+              <div class="form-group">
+                <label for="anonymous-password">同步口令</label>
+                <input
+                  id="anonymous-password"
+                  v-model="anonymousPassword"
+                  type="text"
+                  placeholder="输入一个口令（如：9870）"
+                  class="token-input"
+                  aria-describedby="anonymous-password-help"
+                />
+                <small id="anonymous-password-help" class="form-hint">
+                  设置一个口令用于同步，同一口令可以上传和下载数据。建议使用不易猜测的口令。
+                </small>
               </div>
             </div>
 
@@ -348,9 +374,17 @@
             <div class="sync-status">
               <div class="status-item">
                 <span class="status-label">同步方式：</span>
-                <span class="status-value">{{ cloudSyncConfig.type === 'jianguoyun' ? '坚果云 WebDAV' : 'GitHub Gist' }}</span>
+                <span class="status-value">
+                  {{ cloudSyncConfig.type === 'jianguoyun' ? '坚果云 WebDAV' : 
+                     cloudSyncConfig.type === 'anonymous' ? '匿名口令同步' : 
+                     'GitHub Gist' }}
+                </span>
               </div>
-              <div class="status-item">
+              <div class="status-item" v-if="cloudSyncConfig.type === 'anonymous'">
+                <span class="status-label">同步口令：</span>
+                <span class="status-value">{{ cloudSyncConfig.password ? '已设置' : '未设置' }}</span>
+              </div>
+              <div class="status-item" v-else>
                 <span class="status-label">{{ cloudSyncConfig.type === 'jianguoyun' ? '用户名' : 'GitHub 用户' }}：</span>
                 <span class="status-value">{{ cloudSyncConfig.username }}</span>
               </div>
@@ -602,7 +636,8 @@ import {
   getLastSyncTime,
   syncUpload,
   syncDownload,
-  validateGitHubToken
+  validateGitHubToken,
+  validateAnonymousSync
   // validateJianguoyunCredentials // 暂时隐藏
 } from '../utils/cloudSync.js'
 import {
@@ -641,9 +676,10 @@ export default {
       searchQuery: '',
       filterType: 'all', // 'all', 'default', 'custom'
       sortBy: 'name', // 'name', 'added'
-      syncType: 'github', // 'github' 或 'jianguoyun' (暂时只支持 github)
+      syncType: 'github', // 'github'、'jianguoyun' 或 'anonymous'
       githubToken: '',
       gistId: '',
+      anonymousPassword: '',
       // 暂时隐藏坚果云相关字段
       // jianguoyunUsername: '',
       // jianguoyunPassword: '',
@@ -1028,34 +1064,37 @@ export default {
       if (this.cloudSyncConfig) {
         this.syncType = this.cloudSyncConfig.type || 'github'
         this.gistId = this.cloudSyncConfig.gistId || ''
+        this.anonymousPassword = this.cloudSyncConfig.password || ''
         // 暂时隐藏坚果云相关字段
         // this.jianguoyunUsername = this.cloudSyncConfig.username || ''
         // this.jianguoyunFilePath = this.cloudSyncConfig.filePath || '/0x3/'
       }
     },
-    // 暂时隐藏切换同步方式的方法
-    /*
     handleSyncTypeChange() {
       // 切换同步方式时清空相关输入
       if (this.syncType === 'github') {
-        this.jianguoyunUsername = ''
-        this.jianguoyunPassword = ''
+        this.anonymousPassword = ''
+        // this.jianguoyunUsername = ''
+        // this.jianguoyunPassword = ''
+      } else if (this.syncType === 'anonymous') {
+        this.githubToken = ''
+        this.gistId = ''
+        // this.jianguoyunUsername = ''
+        // this.jianguoyunPassword = ''
       } else {
         this.githubToken = ''
         this.gistId = ''
+        this.anonymousPassword = ''
       }
     },
-    */
     canSetupSync() {
-      // 暂时只支持 GitHub Gist
-      return !!this.githubToken?.trim()
-      /*
       if (this.syncType === 'github') {
         return !!this.githubToken?.trim()
+      } else if (this.syncType === 'anonymous') {
+        return !!this.anonymousPassword?.trim()
       } else {
         return !!(this.jianguoyunUsername?.trim() && this.jianguoyunPassword?.trim() && this.jianguoyunFilePath?.trim())
       }
-      */
     },
     formatLastSyncTime(date) {
       if (!date) return '从未同步'
@@ -1075,36 +1114,60 @@ export default {
     async handleSetupCloudSync() {
       this.syncing = true
       try {
-        // 暂时只支持 GitHub Gist
-        if (!this.githubToken || !this.githubToken.trim()) {
-          await error('请输入 GitHub Token')
-          return
-        }
+        if (this.syncType === 'github') {
+          // GitHub Gist
+          if (!this.githubToken || !this.githubToken.trim()) {
+            await error('请输入 GitHub Token')
+            return
+          }
 
-        const result = await validateGitHubToken(this.githubToken.trim())
-        
-        if (!result.valid) {
-          await error(result.error || 'Token 验证失败')
-          return
-        }
+          const result = await validateGitHubToken(this.githubToken.trim())
+          
+          if (!result.valid) {
+            await error(result.error || 'Token 验证失败')
+            return
+          }
 
-        // 保存配置
-        const config = {
-          type: 'github',
-          token: this.githubToken.trim(),
-          username: result.username,
-          gistId: this.gistId.trim() || null
-        }
-        saveSyncConfig(config)
-        this.cloudSyncConfig = config
-        this.githubToken = '' // 清空输入框
-        this.gistId = config.gistId || ''
-        
-        await success(`已连接到 GitHub 用户：${result.username}`)
-        
-        /* 暂时隐藏坚果云 WebDAV 代码
+          // 保存配置
+          const config = {
+            type: 'github',
+            token: this.githubToken.trim(),
+            username: result.username,
+            gistId: this.gistId.trim() || null
+          }
+          saveSyncConfig(config)
+          this.cloudSyncConfig = config
+          this.githubToken = '' // 清空输入框
+          this.gistId = config.gistId || ''
+          
+          await success(`已连接到 GitHub 用户：${result.username}`)
+        } else if (this.syncType === 'anonymous') {
+          // 匿名口令同步
+          if (!this.anonymousPassword || !this.anonymousPassword.trim()) {
+            await error('请输入同步口令')
+            return
+          }
+
+          const result = await validateAnonymousSync()
+          
+          if (!result.valid) {
+            await error(result.error || '服务器连接失败')
+            return
+          }
+
+          // 保存配置
+          const config = {
+            type: 'anonymous',
+            password: this.anonymousPassword.trim()
+          }
+          saveSyncConfig(config)
+          this.cloudSyncConfig = config
+          this.anonymousPassword = '' // 清空输入框
+          
+          await success('已连接到匿名口令同步服务器')
         } else {
-          // 坚果云 WebDAV
+          // 坚果云 WebDAV（暂时隐藏）
+          /* 暂时隐藏坚果云 WebDAV 代码
           if (!this.jianguoyunUsername?.trim() || !this.jianguoyunPassword?.trim()) {
             await error('请输入坚果云用户名和应用密码')
             return
@@ -1137,8 +1200,8 @@ export default {
           this.jianguoyunPassword = '' // 清空密码输入框
           
           await success(`已连接到坚果云账号：${result.username}`)
+          */
         }
-        */
       } catch (err) {
         console.error('设置云同步失败:', err)
         await error('设置失败：' + err.message)
@@ -1207,6 +1270,11 @@ export default {
         return
       }
 
+      if (this.cloudSyncConfig.type === 'anonymous' && !this.cloudSyncConfig.password) {
+        await error('未配置同步口令，请先设置口令')
+        return
+      }
+
       this.syncing = true
       try {
         const result = await syncDownload()
@@ -1258,6 +1326,7 @@ export default {
         this.syncType = 'github'
         this.githubToken = ''
         this.gistId = ''
+        this.anonymousPassword = ''
         // 暂时隐藏坚果云相关字段
         // this.jianguoyunUsername = ''
         // this.jianguoyunPassword = ''
@@ -1287,9 +1356,9 @@ export default {
         return
       }
 
-      // 验证文件大小（限制为 5MB）
-      if (file.size > 5 * 1024 * 1024) {
-        await error('图片大小不能超过 5MB')
+      // 验证文件大小（限制为 10MB）
+      if (file.size > 10 * 1024 * 1024) {
+        await error('图片大小不能超过 10MB')
         event.target.value = ''
         return
       }
@@ -1441,7 +1510,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 56px;
+  margin-bottom: var(--spacing-3xl);
 }
 
 .settings-title {
@@ -1456,14 +1525,14 @@ export default {
 .close-btn {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: transparent;
   border: none;
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   cursor: pointer;
 }
 
@@ -1485,7 +1554,7 @@ export default {
 .settings-content {
   display: flex;
   flex-direction: column;
-  gap: 48px;
+  gap: var(--spacing-2xl);
 }
 
 .settings-section {
@@ -1498,20 +1567,20 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: var(--spacing-md);
   flex-wrap: wrap;
 }
 
 .section-header-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--spacing-md);
   flex-wrap: wrap;
 }
 
 .import-export-buttons {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-sm);
   align-items: center;
 }
 
@@ -1520,11 +1589,11 @@ export default {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   cursor: pointer;
   border: 1px solid var(--border-color);
   background-color: var(--bg-card);
@@ -1572,8 +1641,8 @@ export default {
 .cloud-sync-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 32px;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -1589,7 +1658,7 @@ export default {
 .sync-type-selector {
   display: flex;
   flex-direction: row;
-  gap: 16px;
+  gap: var(--spacing-md);
   margin-top: 12px;
 }
 
@@ -1598,12 +1667,12 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 0;
-  padding: 16px 20px;
+  padding: var(--spacing-md) var(--spacing-lg);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background-color: var(--bg-primary);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
@@ -1648,14 +1717,14 @@ export default {
 
 .token-input {
   width: 100%;
-  padding: 12px 16px;
+  padding: var(--spacing-md) var(--spacing-md);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-size: 14px;
   font-family: 'Courier New', monospace;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   line-height: 1.5;
 }
 
@@ -1678,20 +1747,20 @@ export default {
 .token-input code {
   background-color: var(--bg-hover);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-family: 'Courier New', monospace;
 }
 
 .sync-setup-btn {
   padding: 12px 28px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: var(--accent-color);
   color: white;
   border: none;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   align-self: flex-start;
   margin-top: 4px;
 }
@@ -1713,7 +1782,7 @@ export default {
 .sync-status {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  gap: var(--spacing-md);
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border-color);
   margin-bottom: 16px;
@@ -1722,7 +1791,7 @@ export default {
 .status-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--spacing-sm);
   font-size: 14px;
   padding: 8px 0;
 }
@@ -1739,7 +1808,7 @@ export default {
 
 .sync-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-md);
   flex-wrap: wrap;
 }
 
@@ -1747,16 +1816,16 @@ export default {
 .sync-download-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border-radius: 10px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
   background-color: var(--accent-color);
   color: white;
   border: none;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
 }
 
 .sync-upload-btn:hover:not(:disabled),
@@ -1789,15 +1858,15 @@ export default {
 }
 
 .sync-disconnect-btn {
-  padding: 10px 16px;
-  border-radius: 10px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
   background-color: transparent;
   color: var(--text-secondary);
   border: 2px solid var(--border-color);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
 }
 
 .sync-disconnect-btn:hover:not(:disabled) {
@@ -1830,13 +1899,13 @@ export default {
 
 .filter-input {
   width: 100%;
-  padding: 12px 40px 12px 16px;
+  padding: var(--spacing-md) var(--spacing-2xl) var(--spacing-md) var(--spacing-md);
   border: 2px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background-color: var(--bg-card);
   color: var(--text-primary);
   font-size: 15px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   line-height: 1.5;
 }
 
@@ -1858,7 +1927,7 @@ export default {
   transform: translateY(-50%);
   cursor: pointer;
   color: var(--text-secondary);
-  transition: color 0.2s ease;
+  transition: color var(--transition-base) var(--transition-timing);
 }
 
 .clear-search:hover {
@@ -1867,20 +1936,20 @@ export default {
 
 .filter-tabs {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-sm);
   flex-wrap: wrap;
 }
 
 .filter-tab {
-  padding: 8px 16px;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-card);
   color: var(--text-secondary);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
 }
 
 .filter-tab:hover {
@@ -1905,14 +1974,14 @@ export default {
 }
 
 .sort-select {
-  padding: 8px 12px;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-card);
   color: var(--text-primary);
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   font-family: inherit;
 }
 
@@ -1925,9 +1994,9 @@ export default {
 .add-engine-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 32px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
+  transition: all var(--transition-base) var(--transition-timing);
 }
 
 .add-engine-card:focus-within {
@@ -1962,13 +2031,13 @@ export default {
 }
 
 .form-group input {
-  padding: 12px 16px;
+  padding: var(--spacing-md) var(--spacing-md);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-size: 14px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   line-height: 1.5;
   width: 100%;
 }
@@ -2005,7 +2074,7 @@ export default {
   color: var(--accent-color);
   text-decoration: none;
   font-weight: 500;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   border-bottom: 1px solid transparent;
   padding-bottom: 1px;
 }
@@ -2018,7 +2087,7 @@ export default {
 .form-hint a:focus-visible {
   outline: 2px solid var(--accent-color);
   outline-offset: 2px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   border-bottom-color: transparent;
 }
 
@@ -2026,8 +2095,8 @@ export default {
 .background-image-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 32px;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl);
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -2036,16 +2105,16 @@ export default {
 .upload-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
   background-color: var(--accent-color);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
 }
 
 .upload-button:hover {
@@ -2060,7 +2129,7 @@ export default {
 .current-background {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-md);
 }
 
 .current-background-preview {
@@ -2068,7 +2137,7 @@ export default {
   width: 100%;
   max-width: 500px;
   aspect-ratio: 16 / 9;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--border-color);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -2113,7 +2182,7 @@ export default {
 .background-history {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--spacing-md);
 }
 
 .history-title {
@@ -2126,17 +2195,17 @@ export default {
 .history-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 16px;
+  gap: var(--spacing-md);
 }
 
 .history-item {
   position: relative;
   aspect-ratio: 16 / 9;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--border-color);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   background-color: var(--bg-primary);
 }
 
@@ -2164,7 +2233,7 @@ export default {
   right: 4px;
   width: 24px;
   height: 24px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background-color: rgba(240, 62, 62, 0.9);
   color: white;
   border: none;
@@ -2194,7 +2263,7 @@ export default {
   color: white;
   font-size: 11px;
   font-weight: 600;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .form-error {
@@ -2220,10 +2289,10 @@ export default {
   background-color: var(--accent-color);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-weight: 500;
   font-size: 14px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   align-self: flex-start;
   cursor: pointer;
   margin-top: 4px;
@@ -2265,8 +2334,8 @@ export default {
   padding: 24px;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base) var(--transition-timing);
   gap: 18px;
 }
 
@@ -2285,7 +2354,7 @@ export default {
 .engine-info {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--spacing-md);
   flex: 1;
   min-width: 0;
 }
@@ -2309,7 +2378,7 @@ export default {
 
 .icon-input-group {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-sm);
   align-items: center;
 }
 
@@ -2317,10 +2386,10 @@ export default {
   padding: 10px 14px;
   background-color: var(--bg-hover);
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2353,11 +2422,11 @@ export default {
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .icon-upload-btn-small:hover {
@@ -2398,12 +2467,12 @@ export default {
   padding: 0;
   background-color: transparent;
   border: 2px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -2437,10 +2506,10 @@ export default {
 }
 
 .default-badge {
-  padding: 8px 16px;
+  padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--bg-hover);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   color: var(--text-secondary);
   font-weight: 500;
@@ -2452,7 +2521,7 @@ export default {
 
 .engine-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-sm);
   align-items: center;
   justify-content: right;
   flex-shrink: 0;
@@ -2461,7 +2530,7 @@ export default {
 
 .engine-actions-right {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-sm);
   align-items: center;
 }
 
@@ -2471,12 +2540,12 @@ export default {
   padding: 0;
   background-color: transparent;
   border: 2px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   cursor: pointer;
 }
 
@@ -2500,10 +2569,10 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-md);
   padding: 16px;
   background-color: var(--bg-hover);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: 2px solid var(--accent-color);
   width: 100%;
   box-sizing: border-box;
@@ -2512,7 +2581,7 @@ export default {
 
 .form-group-inline {
   display: flex;
-  gap: 8px;
+  gap: var(--spacing-sm);
   width: 100%;
   min-width: 0;
 }
@@ -2521,11 +2590,11 @@ export default {
   flex: 1;
   padding: 10px 14px;
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: var(--bg-card);
   color: var(--text-primary);
   font-size: 14px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   line-height: 1.5;
   min-width: 0;
   box-sizing: border-box;
@@ -2549,17 +2618,17 @@ export default {
 .edit-actions {
   display: flex;
   justify-content: right;
-  gap: 8px;
+  gap: var(--spacing-sm);
   margin-top: 4px;
 }
 
 .save-btn,
 .cancel-btn {
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   cursor: pointer;
 }
 
@@ -2629,13 +2698,13 @@ export default {
   
   .engines-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: var(--spacing-md);
   }
   
   .engine-card {
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
+    gap: var(--spacing-md);
   }
   
   .engine-actions {
@@ -2701,7 +2770,7 @@ export default {
   }
 
   .settings-section {
-    gap: 16px;
+    gap: var(--spacing-md);
   }
 
   .section-title {
@@ -2718,12 +2787,12 @@ export default {
 
   .cloud-sync-card {
     padding: 20px;
-    gap: 16px;
+    gap: var(--spacing-md);
   }
 
   .sync-type-selector {
     flex-direction: column;
-    gap: 12px;
+    gap: var(--spacing-md);
   }
 
   .sync-type-option {
@@ -2731,7 +2800,7 @@ export default {
   }
 
   .sync-config-section {
-    gap: 16px;
+    gap: var(--spacing-md);
   }
 
   .sync-status {
@@ -2767,7 +2836,7 @@ export default {
   }
 
   .engines-filter-bar {
-    gap: 12px;
+    gap: var(--spacing-md);
   }
 
   .background-image-card {
@@ -2786,11 +2855,11 @@ export default {
 
   .history-grid {
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 12px;
+    gap: var(--spacing-md);
   }
 
   .history-item {
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
   }
 }
 </style>

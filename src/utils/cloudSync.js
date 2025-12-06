@@ -1,6 +1,6 @@
 /**
  * 云同步服务
- * 支持 GitHub Gist 和坚果云 WebDAV 两种同步方式
+ * 支持 GitHub Gist、坚果云 WebDAV 和匿名口令同步三种同步方式
  */
 
 const GIST_FILENAME = '0x3-search-engines.json'
@@ -16,6 +16,11 @@ const GITHUB_API_BASE = 'https://api.github.com'
  * 坚果云 WebDAV 基础 URL
  */
 const JIANGUOYUN_DAV_BASE = 'https://dav.jianguoyun.com/dav/'
+
+/**
+ * 匿名口令同步服务器基础 URL
+ */
+const ANONYMOUS_SYNC_BASE = 'https://sync.0x3.im:8443/api'
 
 /**
  * 生成带日期的文件名
@@ -405,6 +410,112 @@ export async function validateJianguoyunCredentials(username, password) {
 }
 
 /**
+ * 检查匿名口令同步服务器状态
+ * @returns {Promise<{success: boolean, message?: string}>}
+ */
+export async function checkAnonymousSyncStatus() {
+  try {
+    const response = await fetch(`${ANONYMOUS_SYNC_BASE}/status`)
+    if (!response.ok) {
+      throw new Error('服务器不可用')
+    }
+    const data = await response.json()
+    return { success: true, message: data.message || '服务器正常' }
+  } catch (error) {
+    console.error('Check anonymous sync status failed:', error)
+    return {
+      success: false,
+      message: error.message || '无法连接到服务器'
+    }
+  }
+}
+
+/**
+ * 上传数据到匿名口令同步服务器
+ * @param {string} password - 口令
+ * @param {string} encryptedData - 加密后的数据
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export async function uploadToAnonymousSync(password, encryptedData) {
+  try {
+    // 创建 Blob 对象
+    const blob = new Blob([encryptedData], { type: 'application/json' })
+    const file = new File([blob], '0x3-search-engines.json', { type: 'application/json' })
+
+    const formData = new FormData()
+    formData.append('password', password)
+    formData.append('file', file)
+
+    const response = await fetch(`${ANONYMOUS_SYNC_BASE}/upload`, {
+      method: 'POST',
+      body: formData
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: '上传失败' }))
+      throw new Error(error.message || '上传失败')
+    }
+
+    const data = await response.json()
+    saveLastSyncTime()
+    return {
+      success: true,
+      message: data.message || '上传成功'
+    }
+  } catch (error) {
+    console.error('Upload to anonymous sync failed:', error)
+    throw error
+  }
+}
+
+/**
+ * 从匿名口令同步服务器下载数据
+ * @param {string} password - 口令
+ * @returns {Promise<string>} 加密后的数据
+ */
+export async function downloadFromAnonymousSync(password) {
+  try {
+    const response = await fetch(`${ANONYMOUS_SYNC_BASE}/download/${password}`)
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('文件不存在，请先上传一次')
+      }
+      const error = await response.json().catch(() => ({ message: '下载失败' }))
+      throw new Error(error.message || '下载失败')
+    }
+
+    const blob = await response.blob()
+    const text = await blob.text()
+    saveLastSyncTime()
+    return text
+  } catch (error) {
+    console.error('Download from anonymous sync failed:', error)
+    throw error
+  }
+}
+
+/**
+ * 验证匿名口令同步服务器连接
+ * @returns {Promise<{valid: boolean, error?: string}>}
+ */
+export async function validateAnonymousSync() {
+  try {
+    const result = await checkAnonymousSyncStatus()
+    if (result.success) {
+      return { valid: true }
+    } else {
+      return { valid: false, error: result.message }
+    }
+  } catch (error) {
+    return {
+      valid: false,
+      error: error.message || '无法连接到服务器'
+    }
+  }
+}
+
+/**
  * 云同步：上传数据
  * @param {string} encryptedData - 加密后的数据
  * @returns {Promise<{success: boolean, message: string, gistId?: string}>}
@@ -416,7 +527,18 @@ export async function syncUpload(encryptedData) {
   }
 
   try {
-    if (config.type === 'jianguoyun') {
+    if (config.type === 'anonymous') {
+      // 匿名口令同步
+      if (!config.password) {
+        throw new Error('未配置口令，请先设置口令')
+      }
+
+      const result = await uploadToAnonymousSync(config.password, encryptedData)
+      return {
+        success: true,
+        message: result.message || '上传成功'
+      }
+    } else if (config.type === 'jianguoyun') {
       // 坚果云 WebDAV
       if (!config.username || !config.password || !config.filePath) {
         throw new Error('坚果云配置不完整，请检查用户名、密码和文件路径')
@@ -482,7 +604,18 @@ export async function syncDownload() {
   }
 
   try {
-    if (config.type === 'jianguoyun') {
+    if (config.type === 'anonymous') {
+      // 匿名口令同步
+      if (!config.password) {
+        throw new Error('未配置口令，请先设置口令')
+      }
+
+      const data = await downloadFromAnonymousSync(config.password)
+      return {
+        success: true,
+        data: data
+      }
+    } else if (config.type === 'jianguoyun') {
       // 坚果云 WebDAV
       if (!config.username || !config.password || !config.filePath) {
         throw new Error('坚果云配置不完整，请检查用户名、密码和文件路径')

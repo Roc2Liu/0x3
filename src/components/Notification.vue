@@ -178,28 +178,28 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
-  padding: 20px;
+  z-index: var(--z-modal);
+  padding: var(--spacing-lg);
   backdrop-filter: blur(var(--frosted-blur-small));
   -webkit-backdrop-filter: blur(var(--frosted-blur-small));
 }
 
 .notification-dialog {
   background-color: var(--bg-card);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   max-width: 480px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   border: 2px solid var(--border-color);
-  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideUp var(--transition-slow) var(--transition-timing);
 }
 
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: translateY(var(--spacing-lg)) scale(0.95);
   }
   to {
     opacity: 1;
@@ -211,7 +211,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: var(--spacing-lg) var(--spacing-lg);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -225,7 +225,7 @@ export default {
 .notification-close {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: transparent;
   border: none;
   color: var(--text-secondary);
@@ -233,7 +233,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all var(--transition-base) var(--transition-timing);
 }
 
 .notification-close:hover {
@@ -242,7 +242,7 @@ export default {
 }
 
 .notification-content {
-  padding: 24px;
+  padding: var(--spacing-lg);
 }
 
 .notification-message {
@@ -261,19 +261,19 @@ export default {
 
 .notification-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--spacing-md);
   justify-content: flex-end;
-  padding: 16px 24px;
+  padding: var(--spacing-md) var(--spacing-lg);
   border-top: 1px solid var(--border-color);
 }
 
 .notification-btn {
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-base) var(--transition-timing);
   border: 2px solid var(--border-color);
   background-color: var(--bg-card);
   color: var(--text-primary);
@@ -314,25 +314,25 @@ export default {
 
 .notification-enter-active,
 .notification-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-slow) var(--transition-timing);
 }
 
 .notification-enter-from,
 .notification-leave-to {
   opacity: 0;
-  transform: translateY(20px) scale(0.95);
+  transform: translateY(var(--spacing-lg)) scale(0.95);
 }
 
 @media (max-width: 768px) {
   .notification-dialog {
     max-width: 90%;
-    margin: 20px;
+    margin: var(--spacing-lg);
   }
   
   .notification-header,
   .notification-content,
   .notification-actions {
-    padding: 16px;
+    padding: var(--spacing-md);
   }
   
   .notification-actions {
