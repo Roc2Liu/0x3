@@ -9,18 +9,6 @@
   >
     <div class="settings-header-bar">
       <h2 id="settings-title" class="settings-title">设置</h2>
-      <button 
-        class="close-btn"
-        ref="closeButtonRef"
-        @click="$emit('close')"
-        aria-label="关闭设置"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-        <span class="visually-hidden">关闭</span>
-      </button>
     </div>
 
     <div class="settings-content">
@@ -1454,7 +1442,7 @@ export default {
     // 保存当前焦点元素
     this.previousActiveElement = document.activeElement
     // 聚焦到第一个输入框或关闭按钮
-    const firstInput = this.$el.querySelector('input') || this.$refs.closeButtonRef
+    const firstInput = this.$el.querySelector('input')
     if (firstInput) {
       firstInput.focus()
     }
@@ -1491,6 +1479,7 @@ export default {
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
+  margin-top: 3rem;
   padding: 48px 32px 64px;
   backdrop-filter: blur(var(--frosted-blur));
   -webkit-backdrop-filter: blur(var(--frosted-blur));
@@ -1522,34 +1511,6 @@ export default {
   letter-spacing: -0.3px;
 }
 
-.close-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
-  background-color: transparent;
-  border: none;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-base) var(--transition-timing);
-  cursor: pointer;
-}
-
-.close-btn:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.close-btn:focus-visible {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
-  border-color: var(--accent-color);
-}
-
-.close-btn:active {
-  transform: scale(0.95);
-}
 
 .settings-content {
   display: flex;
@@ -2667,6 +2628,7 @@ export default {
 
 @media (max-width: 768px) {
   .settings-container {
+    margin-top: 3rem;
     padding: 0;
   }
   
@@ -2750,6 +2712,7 @@ export default {
   }
 
   .settings-container {
+    margin-top: 3rem;
     padding: 24px 16px 40px;
   }
 

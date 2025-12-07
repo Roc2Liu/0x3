@@ -1,18 +1,5 @@
 <template>
   <div class="about-container" role="document">
-      <button 
-        class="close-btn" 
-        @click="$emit('close')"
-        aria-label="关闭关于页面"
-        @keydown.escape="$emit('close')"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-        <span class="visually-hidden">关闭</span>
-      </button>
-
     <div class="about-content">
       <div class="about-intro">
         <p class="slogan">
@@ -32,16 +19,16 @@
       <section class="about-section" aria-labelledby="features-title">
         <h2 id="features-title" class="section-title">核心特性（抽象）特性</h2>
           <ul class="feature-list">
-          <li><strong>搜索引擎管理</strong>：想加就加，想删就删，反正不听话的直接送进回收站</li>
+          <li><strong>搜索引擎管理</strong>：想加就加，想删就删，反正不听话的直接送进垃圾桶</li>
           <li><strong>云同步双雄</strong>：
             <ul>
               <li>GitHub Gist：适合装逼的程序员</li>
               <li>匿名口令同步：适合社恐、不想登录、今天同步明天失忆的抽象用户</li>
           </ul>
           </li>
-          <li><strong>背景图</strong>：最多存 5 张，再多作者怕你手机爆炸</li>
+          <li><strong>背景图</strong>：最多存 5 张，再多作者怕你存储爆炸，毕竟硬盘贵的飞起</li>
           <li><strong>主题系统</strong>：浅色伤眼、深色护眼、自动摆烂，三种模式随便选</li>
-          <li><strong>隐私政策</strong>：「肉眼不可读」→「AI 也不可读」→「作者自己都不可读」—— 看不懂三连，永不翻车</li>
+          <li><strong>数据安全</strong>：「肉眼不可读」→「AI 也不可读」→「作者自己都不可读」—— 看不懂三连，永不翻车</li>
           </ul>
       </section>
 
@@ -74,7 +61,7 @@
           <li>Vite（webpack 谁用谁是孙子）</li>
           <li>LocalStorage + IndexedDB（作者不会搭后端）</li>
           <li>GitHub Gist 当云盘（马斯克看了都沉默）</li>
-          <li>匿名同步服务器：一台 99 块钱快到期的垃圾云 VPS +  24小时后删文件（环保节能）<br><small style="opacity:0.7; font-weight:normal;">到期时间：{{ serverExpiryText }}</small></li>
+          <li>匿名同步服务器：一台 99 块钱{{ serverExpiryText }}到期的垃圾云 VPS +  24小时后删文件（环保节能）</li>
         </ul>
       </section>
 
@@ -150,12 +137,6 @@ export default {
   },
   mounted() {
     this.previousActiveElement = document.activeElement
-    this.$nextTick(() => {
-      const closeBtn = this.$el.querySelector('.close-btn')
-      if (closeBtn) {
-        closeBtn.focus()
-      }
-    })
     this.escapeHandler = (e) => {
       if (e.key === 'Escape') {
         this.$emit('close')
@@ -195,34 +176,6 @@ export default {
   overflow-x: hidden;
 }
 
-.close-btn {
-  position: fixed;
-  top: calc(var(--spacing-lg) + 80px); /* header 高度 + 间距 */
-  right: var(--spacing-lg);
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--transition-base) var(--transition-timing);
-  cursor: pointer;
-  z-index: calc(var(--z-modal) + 1); /* 确保在关于页面之上 */
-  box-shadow: var(--shadow-md);
-}
-
-.close-btn:hover {
-  background-color: var(--bg-hover);
-  border-color: var(--border-color);
-}
-
-.close-btn:focus-visible {
-  outline: 2px solid var(--accent-color);
-  outline-offset: 2px;
-}
 
 .about-content {
   max-width: 900px;

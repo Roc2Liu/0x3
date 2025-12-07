@@ -14,6 +14,54 @@
           <h1 class="logo" @click="goToHome" role="button" tabindex="0" @keydown.enter="goToHome" @keydown.space.prevent="goToHome">0x3</h1>
         </div>
         <nav class="header-actions" aria-label="主要操作">
+          <div class="header-actions-group">
+            <div class="slider" :class="{ 'slider-home': !showAbout && !showSettings, 'slider-about': showAbout, 'slider-settings': showSettings }"></div>
+            <button 
+              class="home-btn" 
+              ref="homeBtnRef"
+              :disabled="!showAbout && !showSettings"
+              @click="goToHome" 
+              aria-label="返回首页"
+              title="返回首页"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+              <span class="visually-hidden">首页</span>
+            </button>
+            <button 
+              class="about-btn" 
+              ref="aboutBtnRef"
+              :disabled="showAbout"
+              @click="handleAboutClick" 
+              :aria-label="showAbout ? '关闭关于' : '打开关于'"
+              :aria-expanded="showAbout"
+              :title="showAbout ? '关闭关于' : '打开关于'"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              <span class="visually-hidden">关于</span>
+            </button>
+            <button 
+              class="settings-btn" 
+              ref="settingsBtnRef"
+              :disabled="showSettings"
+              @click="handleSettingsClick" 
+              :aria-label="showSettings ? '关闭设置' : '打开设置'"
+              :aria-expanded="showSettings"
+              :title="showSettings ? '关闭设置' : '打开设置'"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              <span class="visually-hidden">设置</span>
+            </button>
+          </div>
           <button 
             class="theme-toggle" 
             @click="toggleTheme" 
@@ -43,33 +91,6 @@
               <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
             </svg>
             <span class="visually-hidden">{{ themeToggleText }}</span>
-          </button>
-          <button 
-            class="about-btn" 
-            @click="handleAboutClick" 
-            :aria-label="showAbout ? '关闭关于' : '打开关于'"
-            :aria-expanded="showAbout"
-            :title="showAbout ? '关闭关于' : '打开关于'"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-            <span class="visually-hidden">关于</span>
-          </button>
-          <button 
-            class="settings-btn" 
-            @click="handleSettingsClick" 
-            :aria-label="showSettings ? '关闭设置' : '打开设置'"
-            :aria-expanded="showSettings"
-            :title="showSettings ? '关闭设置' : '打开设置'"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-            <span class="visually-hidden">设置</span>
           </button>
         </nav>
       </div>
@@ -132,6 +153,9 @@ export default {
     const showSettings = ref(false)
     const showAbout = ref(false)
     const backgroundImage = ref(null)
+    const homeBtnRef = ref(null)
+    const aboutBtnRef = ref(null)
+    const settingsBtnRef = ref(null)
 
     // 获取当前实际显示的主题（考虑 auto 模式）
     const currentDisplayTheme = computed(() => {
@@ -384,7 +408,10 @@ export default {
       isImageIcon,
       handleSkipToMain,
       backgroundImage,
-      handleBackgroundChanged
+      handleBackgroundChanged,
+      homeBtnRef,
+      aboutBtnRef,
+      settingsBtnRef
     }
   }
 }
@@ -509,9 +536,108 @@ export default {
   align-items: center;
 }
 
+.header-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background-color: rgba(224, 224, 224, 0.6);
+  border-radius: 24px;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  transition: background-color var(--transition-base) var(--transition-timing);
+  position: relative;
+}
+
+[data-theme="dark"] .header-actions-group {
+  background-color: rgba(60, 60, 60, 0.6);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+.slider {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: #ffffff;
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: 
+    left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    height 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-radius 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  left: 4px;
+  z-index: 0;
+  will-change: left, width, height, border-radius;
+}
+
+[data-theme="dark"] .slider {
+  background-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.slider-home {
+  left: 4px;
+}
+
+.slider-about {
+  left: 48px;
+}
+
+.slider-settings {
+  left: 92px;
+}
+
+.home-btn,
 .about-btn,
-.theme-toggle,
 .settings-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: transparent;
+  border: none;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  z-index: 1;
+  transition: opacity var(--transition-base) var(--transition-timing);
+}
+
+.home-btn:disabled,
+.about-btn:disabled,
+.settings-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.home-btn svg,
+.about-btn svg,
+.settings-btn svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.home-btn:focus-visible:not(:disabled),
+.about-btn:focus-visible:not(:disabled),
+.settings-btn:focus-visible:not(:disabled) {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+.theme-toggle {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-sm);
@@ -524,41 +650,24 @@ export default {
   transition: all var(--transition-base) var(--transition-timing);
   cursor: pointer;
   position: relative;
-}
-
-.about-btn svg,
-.theme-toggle svg,
-.settings-btn svg {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
+  margin-left: var(--spacing-sm);
 }
 
 .theme-toggle svg {
-  display: block;
-  justify-content: center;
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
+  display: block;
 }
 
-.about-btn:hover,
-.theme-toggle:hover,
-.settings-btn:hover {
+.theme-toggle:hover {
   background-color: var(--bg-hover);
   border-color: var(--border-color);
 }
 
-.about-btn:focus-visible,
-.theme-toggle:focus-visible,
-.settings-btn:focus-visible {
+.theme-toggle:focus-visible {
   outline: 2px solid var(--accent-color);
   outline-offset: 2px;
-}
-
-.about-btn:active,
-.theme-toggle:active,
-.settings-btn:active {
-  transform: scale(0.95);
 }
 
 .main-content {
