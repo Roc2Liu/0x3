@@ -7,6 +7,53 @@
       @click="showEngineList = false"
     ></div>
     
+    <!-- 移动端下拉菜单（移到外层，确保从屏幕底部弹出） -->
+    <Transition name="slide-up" appear>
+      <div 
+        v-if="showEngineList" 
+        class="engine-list engine-list-mobile" 
+        role="listbox"
+        @click.stop
+      >
+      <div v-if="engines.length > 6" class="engine-list-search">
+        <label for="engine-filter-mobile" class="visually-hidden">搜索引擎</label>
+        <input
+          id="engine-filter-mobile"
+          v-model="engineFilter"
+          type="text"
+          class="engine-filter-input"
+          placeholder="搜索引擎..."
+          @click.stop
+          @keydown.escape.stop="showEngineList = false"
+        />
+      </div>
+      <div
+        v-for="engine in filteredEngines"
+        :key="engine.id"
+        class="engine-item"
+        :class="{ active: engine.id === currentEngine }"
+        role="option"
+        :aria-selected="engine.id === currentEngine"
+        :aria-label="`选择 ${engine.name}`"
+        tabindex="0"
+        @click="selectEngine(engine.id)"
+        @keydown.enter="selectEngine(engine.id)"
+        @keydown.space.prevent="selectEngine(engine.id)"
+        @keydown.escape="showEngineList = false"
+      >
+        <span class="engine-icon" aria-hidden="true">
+          <img v-if="isImageIcon(engine.icon)" :src="engine.icon" :alt="`${engine.name} 图标`" class="engine-icon-img" />
+          <span v-else>{{ engine.icon }}</span>
+        </span>
+        <span class="engine-name">{{ engine.name }}</span>
+        <span v-if="engine.id === currentEngine" class="checkmark" aria-hidden="true">✓</span>
+      </div>
+      <div v-if="filteredEngines.length === 0" class="engine-list-empty">
+        没有找到匹配的引擎
+      </div>
+      </div>
+    </Transition>
+    
     <!-- 桌面端布局 -->
     <div class="search-wrapper desktop-layout">
       <div 
@@ -130,50 +177,6 @@
           <img v-if="isImageIcon(currentEngineIcon)" :src="currentEngineIcon" :alt="`${currentEngineName} 图标`" class="engine-icon-img" />
           <span v-else>{{ currentEngineIcon }}</span>
         </span>
-        
-        <div 
-          v-if="showEngineList" 
-          class="engine-list engine-list-mobile" 
-          role="listbox"
-          @click.stop
-        >
-          <div v-if="engines.length > 6" class="engine-list-search">
-            <label for="engine-filter-mobile" class="visually-hidden">搜索引擎</label>
-            <input
-              id="engine-filter-mobile"
-              v-model="engineFilter"
-              type="text"
-              class="engine-filter-input"
-              placeholder="搜索引擎..."
-              @click.stop
-              @keydown.escape.stop="showEngineList = false"
-            />
-          </div>
-          <div
-            v-for="engine in filteredEngines"
-            :key="engine.id"
-            class="engine-item"
-            :class="{ active: engine.id === currentEngine }"
-            role="option"
-            :aria-selected="engine.id === currentEngine"
-            :aria-label="`选择 ${engine.name}`"
-            tabindex="0"
-            @click="selectEngine(engine.id)"
-            @keydown.enter="selectEngine(engine.id)"
-            @keydown.space.prevent="selectEngine(engine.id)"
-            @keydown.escape="showEngineList = false"
-          >
-            <span class="engine-icon" aria-hidden="true">
-              <img v-if="isImageIcon(engine.icon)" :src="engine.icon" :alt="`${engine.name} 图标`" class="engine-icon-img" />
-              <span v-else>{{ engine.icon }}</span>
-            </span>
-            <span class="engine-name">{{ engine.name }}</span>
-            <span v-if="engine.id === currentEngine" class="checkmark" aria-hidden="true">✓</span>
-          </div>
-          <div v-if="filteredEngines.length === 0" class="engine-list-empty">
-            没有找到匹配的引擎
-          </div>
-        </div>
       </div>
 
       <label for="search-input-mobile" class="visually-hidden">搜索关键词</label>
@@ -374,6 +377,8 @@ export default {
   max-width: 800px;
   margin: 0 auto;
   animation: fadeInUp var(--transition-slow) var(--transition-timing);
+  position: relative;
+  overflow: visible; /* 确保下拉菜单不被裁剪 */
 }
 
 @keyframes fadeInUp {
@@ -393,6 +398,7 @@ export default {
   align-items: center;
   gap: var(--spacing-lg);
   width: 100%;
+  overflow: visible; /* 确保下拉菜单不被裁剪 */
 }
 
 /* 桌面端布局 */
@@ -471,7 +477,7 @@ export default {
 
 .engine-list {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + var(--spacing-sm));
   left: 0;
   min-width: 220px;
   background-color: var(--bg-card);
@@ -485,6 +491,37 @@ export default {
   padding: var(--spacing-sm);
   display: flex;
   flex-direction: column;
+}
+
+/* 移动端下拉菜单不继承桌面端的样式 */
+.engine-list.engine-list-mobile {
+  position: fixed !important;
+  top: auto !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  min-width: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  max-height: 60vh !important;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
+  border-bottom: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  z-index: calc(var(--z-dropdown) + 100) !important;
+  transform-origin: bottom center !important;
+  animation: none !important; /* 禁用桌面端动画 */
+}
+
+/* 移动端下拉菜单基础样式（在媒体查询外定义，确保优先级） */
+.engine-list-mobile {
+  display: none !important; /* 默认隐藏，在移动端媒体查询中显示 */
+  margin: 0 !important;
+  background-color: var(--bg-card) !important;
+  border: 2px solid var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+  overflow-y: auto !important;
+  /* 其他定位样式在 .engine-list.engine-list-mobile 中定义 */
 }
 
 .engine-list-search {
@@ -739,6 +776,7 @@ export default {
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-base) var(--transition-timing);
+    overflow: visible; /* 确保下拉菜单不被裁剪 */
   }
   
   .engine-selector-mobile:hover {
@@ -835,33 +873,52 @@ export default {
     }
   }
   
-  /* 移动端下拉菜单 */
+  /* 移动端下拉菜单样式增强（确保覆盖所有样式） */
   .engine-list-mobile {
-    position: fixed;
-    top: auto !important;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    min-width: auto;
-    width: 100%;
-    max-height: 60vh;
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    border-bottom: none;
-    border-left: none;
-    border-right: none;
-    z-index: var(--z-dropdown);
-    animation: slideUp var(--transition-slow) var(--transition-timing);
+    display: flex !important; /* 在移动端显示 */
+    flex-direction: column !important;
+    padding: var(--spacing-sm) !important;
   }
   
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(100%);
+  /* Vue Transition 动画类 - 确保在移动端正确应用 */
+  .slide-up-enter-active,
+  .slide-up-enter-active.engine-list-mobile {
+    display: flex !important;
+    transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  }
+  
+  .slide-up-leave-active,
+  .slide-up-leave-active.engine-list-mobile {
+    display: flex !important;
+    transition: opacity 0.4s cubic-bezier(0.55, 0.06, 0.68, 0.19), transform 0.4s cubic-bezier(0.55, 0.06, 0.68, 0.19) !important;
+  }
+  
+  .slide-up-enter-from,
+  .slide-up-enter-from.engine-list-mobile {
+    display: flex !important;
+    opacity: 0 !important;
+    transform: translateY(100%) !important;
     }
-    to {
-      opacity: 1;
-      transform: translateY(0);
+  
+  .slide-up-enter-to,
+  .slide-up-enter-to.engine-list-mobile {
+    display: flex !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
     }
+  
+  .slide-up-leave-from,
+  .slide-up-leave-from.engine-list-mobile {
+    display: flex !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+  }
+  
+  .slide-up-leave-to,
+  .slide-up-leave-to.engine-list-mobile {
+    display: flex !important;
+    opacity: 0 !important;
+    transform: translateY(100%) !important;
   }
   
   /* 移动端列表项 */

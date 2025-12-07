@@ -254,17 +254,17 @@ async function addToHistory(imageDataUrl) {
   try {
     let history = await getBackgroundImagesHistory()
 
-    // 如果已存在，先移除
+  // 如果已存在，先移除
     history = history.filter(img => img !== imageDataUrl)
 
-    // 添加到开头
+  // 添加到开头
     history.unshift(imageDataUrl)
 
-    // 限制历史记录数量
-    if (history.length > MAX_HISTORY_COUNT) {
+  // 限制历史记录数量
+  if (history.length > MAX_HISTORY_COUNT) {
       // 移除最旧的记录
-      history = history.slice(0, MAX_HISTORY_COUNT)
-    }
+    history = history.slice(0, MAX_HISTORY_COUNT)
+  }
 
     const db = await openDB()
     await new Promise((resolve, reject) => {

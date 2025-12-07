@@ -11,7 +11,7 @@
     <header class="header" role="banner">
       <div class="header-content">
         <div class="logo-section">
-          <h1 class="logo">0x3</h1>
+          <h1 class="logo" @click="goToHome" role="button" tabindex="0" @keydown.enter="goToHome" @keydown.space.prevent="goToHome">0x3</h1>
         </div>
         <nav class="header-actions" aria-label="主要操作">
           <button 
@@ -20,8 +20,12 @@
             :aria-label="themeToggleText"
             :title="themeToggleText"
           >
-            <!-- 自动模式：显示字母 A -->
-            <span v-if="theme === 'auto'" class="auto-icon" aria-hidden="true">A</span>
+            <!-- 自动模式：显示黑白各半的圆圈，高对比度 -->
+            <svg v-if="theme === 'auto'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" fill="currentColor" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 2 A10 10 0 0 1 12 22 Z" fill="white"/>
+              <line x1="12" y1="2" x2="12" y2="22" stroke="currentColor" stroke-width="2.5"/>
+            </svg>
             <!-- 下一个主题是 dark：显示月亮图标 -->
             <svg v-else-if="nextTheme === 'dark'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
@@ -41,7 +45,6 @@
             <span class="visually-hidden">{{ themeToggleText }}</span>
           </button>
           <button 
-            v-if="showAboutButton"
             class="about-btn" 
             @click="handleAboutClick" 
             :aria-label="showAbout ? '关闭关于' : '打开关于'"
@@ -57,7 +60,7 @@
           </button>
           <button 
             class="settings-btn" 
-            @click="showSettings = !showSettings" 
+            @click="handleSettingsClick" 
             :aria-label="showSettings ? '关闭设置' : '打开设置'"
             :aria-expanded="showSettings"
             :title="showSettings ? '关闭设置' : '打开设置'"
@@ -129,11 +132,7 @@ export default {
     const showSettings = ref(false)
     const showAbout = ref(false)
     const backgroundImage = ref(null)
-    
-    // 关于按钮显示控制：只在首次访问时显示
-    const ABOUT_SEEN_KEY = '0x3-about-seen'
-    const showAboutButton = ref(!localStorage.getItem(ABOUT_SEEN_KEY))
-    
+
     // 获取当前实际显示的主题（考虑 auto 模式）
     const currentDisplayTheme = computed(() => {
       if (theme.value === 'auto') {
@@ -170,12 +169,32 @@ export default {
     
     // 处理关于按钮点击
     const handleAboutClick = () => {
-      showAbout.value = !showAbout.value
-      // 首次点击后，标记为已看过，隐藏按钮
-      if (!localStorage.getItem(ABOUT_SEEN_KEY)) {
-        localStorage.setItem(ABOUT_SEEN_KEY, 'true')
-        showAboutButton.value = false
+      if (showSettings.value) {
+        // 如果设置页面打开，关闭设置并打开关于
+        showSettings.value = false
+        showAbout.value = true
+      } else {
+        // 否则切换关于页面
+        showAbout.value = !showAbout.value
       }
+    }
+    
+    // 处理设置按钮点击
+    const handleSettingsClick = () => {
+      if (showAbout.value) {
+        // 如果关于页面打开，关闭关于并打开设置
+        showAbout.value = false
+        showSettings.value = true
+      } else {
+        // 否则切换设置页面
+        showSettings.value = !showSettings.value
+      }
+    }
+    
+    // 跳转到首页（关闭设置和关于）
+    const goToHome = () => {
+      showSettings.value = false
+      showAbout.value = false
     }
 
     onMounted(async () => {
@@ -356,11 +375,12 @@ export default {
       handleUpdateEngine,
       currentEngineName,
       showAbout,
-      showAboutButton,
       currentDisplayTheme,
       nextTheme,
       themeToggleText,
       handleAboutClick,
+      handleSettingsClick,
+      goToHome,
       isImageIcon,
       handleSkipToMain,
       backgroundImage,
@@ -429,8 +449,10 @@ export default {
 .header {
   border-bottom: 1px solid var(--border-color);
   padding: var(--spacing-lg) 0;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: var(--z-sticky);
   backdrop-filter: blur(var(--frosted-blur));
   -webkit-backdrop-filter: blur(var(--frosted-blur));
@@ -466,9 +488,19 @@ export default {
   color: var(--text-primary);
   letter-spacing: -0.3px;
   margin: 0;
-  line-height: 1.2;
-  transition: color var(--transition-base) var(--transition-timing);
-  opacity: 0.9;
+  cursor: pointer;
+  transition: opacity var(--transition-base) var(--transition-timing);
+  user-select: none;
+}
+
+.logo:hover {
+  opacity: 0.7;
+}
+
+.logo:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .header-actions {
@@ -502,12 +534,8 @@ export default {
   flex-shrink: 0;
 }
 
-.theme-toggle .auto-icon {
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
-  display: flex;
-  align-items: center;
+.theme-toggle svg {
+  display: block;
   justify-content: center;
   width: 20px;
   height: 20px;
@@ -538,6 +566,7 @@ export default {
   display: flex;
   flex-direction: column;
   padding: 0;
+  padding-top: 80px; /* 为固定定位的 header 留出空间 */
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
@@ -556,11 +585,12 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - 80px);
+  height: calc(100vh - 80px);
   padding: var(--spacing-4xl) var(--spacing-lg);
   animation: fadeIn var(--transition-slow) var(--transition-timing);
   width: 100%;
   box-sizing: border-box;
+  overflow: hidden; /* 禁用滚动 */
 }
 
 @keyframes fadeIn {
@@ -579,8 +609,12 @@ export default {
     padding: 0 var(--spacing-md);
   }
   
+  .main-content {
+    padding-top: 70px; /* 移动端 header 高度较小 */
+  }
+  
   .home-view {
-    min-height: calc(100vh - 70px);
+    height: calc(100vh - 70px);
     padding: var(--spacing-2xl) var(--spacing-md);
   }
 }

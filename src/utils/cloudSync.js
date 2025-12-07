@@ -41,7 +41,7 @@ function generateFileNameWithDate() {
 export function getSyncConfig() {
   const config = localStorage.getItem(SYNC_CONFIG_KEY)
   if (!config) return null
-
+  
   try {
     return JSON.parse(config)
   } catch (e) {
@@ -96,7 +96,7 @@ function saveLastSyncTime() {
  */
 export async function uploadToGist(token, gistId, encryptedData) {
   try {
-    const url = gistId
+    const url = gistId 
       ? `${GITHUB_API_BASE}/gists/${gistId}`
       : `${GITHUB_API_BASE}/gists`
 
@@ -563,26 +563,26 @@ export async function syncUpload(encryptedData) {
     } else {
       // GitHub Gist（默认）
       if (!config.token) {
-        throw new Error('未配置云同步，请先设置 GitHub Token')
-      }
+    throw new Error('未配置云同步，请先设置 GitHub Token')
+  }
 
-      const result = await uploadToGist(
-        config.token,
-        config.gistId || null,
-        encryptedData
-      )
+    const result = await uploadToGist(
+      config.token,
+      config.gistId || null,
+      encryptedData
+    )
 
-      // 更新配置中的 Gist ID
-      if (!config.gistId) {
-        config.gistId = result.gistId
-        saveSyncConfig(config)
-      }
+    // 更新配置中的 Gist ID
+    if (!config.gistId) {
+      config.gistId = result.gistId
+      saveSyncConfig(config)
+    }
 
-      return {
-        success: true,
-        message: '上传成功',
-        gistId: result.gistId,
-        url: result.url
+    return {
+      success: true,
+      message: '上传成功',
+      gistId: result.gistId,
+      url: result.url
       }
     }
   } catch (error) {
@@ -634,13 +634,13 @@ export async function syncDownload() {
     } else {
       // GitHub Gist（默认）
       if (!config.token || !config.gistId) {
-        throw new Error('未配置云同步或缺少 Gist ID')
-      }
+    throw new Error('未配置云同步或缺少 Gist ID')
+  }
 
-      const data = await downloadFromGist(config.token, config.gistId)
-      return {
-        success: true,
-        data: data
+    const data = await downloadFromGist(config.token, config.gistId)
+    return {
+      success: true,
+      data: data
       }
     }
   } catch (error) {

@@ -265,34 +265,34 @@
 
             <!-- GitHub Gist 配置 -->
             <div v-if="syncType === 'github'" class="sync-config-section">
-              <div class="form-group">
-                <label for="github-token">GitHub Personal Access Token</label>
-                <input
-                  id="github-token"
-                  v-model="githubToken"
-                  type="password"
-                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                  class="token-input"
-                  aria-describedby="token-help"
-                />
-                <small id="token-help" class="form-hint">
-                  需要 <code>gist</code> 权限。创建 Token：
-                  <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">
-                    https://github.com/settings/tokens
-                  </a>
-                </small>
-              </div>
-              <div class="form-group" v-if="githubToken">
-                <label for="gist-id">Gist ID（可选，首次上传后自动保存）</label>
-                <input
-                  id="gist-id"
-                  v-model="gistId"
-                  type="text"
-                  placeholder="留空则创建新的 Gist"
-                  class="token-input"
-                />
-                <small class="form-hint">如果已有 Gist ID，填写后可下载该 Gist 的数据</small>
-              </div>
+            <div class="form-group">
+              <label for="github-token">GitHub Personal Access Token</label>
+              <input
+                id="github-token"
+                v-model="githubToken"
+                type="password"
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                class="token-input"
+                aria-describedby="token-help"
+              />
+              <small id="token-help" class="form-hint">
+                需要 <code>gist</code> 权限。创建 Token：
+                <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">
+                  https://github.com/settings/tokens
+                </a>
+              </small>
+            </div>
+            <div class="form-group" v-if="githubToken">
+              <label for="gist-id">Gist ID（可选，首次上传后自动保存）</label>
+              <input
+                id="gist-id"
+                v-model="gistId"
+                type="text"
+                placeholder="留空则创建新的 Gist"
+                class="token-input"
+              />
+              <small class="form-hint">如果已有 Gist ID，填写后可下载该 Gist 的数据</small>
+            </div>
             </div>
 
             <!-- 匿名口令同步配置 -->
@@ -1116,31 +1116,31 @@ export default {
       try {
         if (this.syncType === 'github') {
           // GitHub Gist
-          if (!this.githubToken || !this.githubToken.trim()) {
-            await error('请输入 GitHub Token')
-            return
-          }
+      if (!this.githubToken || !this.githubToken.trim()) {
+        await error('请输入 GitHub Token')
+        return
+      }
 
-          const result = await validateGitHubToken(this.githubToken.trim())
-          
-          if (!result.valid) {
-            await error(result.error || 'Token 验证失败')
-            return
-          }
+        const result = await validateGitHubToken(this.githubToken.trim())
+        
+        if (!result.valid) {
+          await error(result.error || 'Token 验证失败')
+          return
+        }
 
-          // 保存配置
-          const config = {
+        // 保存配置
+        const config = {
             type: 'github',
-            token: this.githubToken.trim(),
-            username: result.username,
-            gistId: this.gistId.trim() || null
-          }
-          saveSyncConfig(config)
-          this.cloudSyncConfig = config
-          this.githubToken = '' // 清空输入框
-          this.gistId = config.gistId || ''
-          
-          await success(`已连接到 GitHub 用户：${result.username}`)
+          token: this.githubToken.trim(),
+          username: result.username,
+          gistId: this.gistId.trim() || null
+        }
+        saveSyncConfig(config)
+        this.cloudSyncConfig = config
+        this.githubToken = '' // 清空输入框
+        this.gistId = config.gistId || ''
+        
+        await success(`已连接到 GitHub 用户：${result.username}`)
         } else if (this.syncType === 'anonymous') {
           // 匿名口令同步
           if (!this.anonymousPassword || !this.anonymousPassword.trim()) {
