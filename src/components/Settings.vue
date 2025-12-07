@@ -1297,6 +1297,18 @@ export default {
           this.$emit('import-engines', validEngines)
           this.lastSyncTime = getLastSyncTime()
           await success(`成功从云端下载 ${validEngines.length} 个搜索引擎`)
+          
+          // 匿名口令同步下载后自动断开连接（因为数据已从服务器清理）
+          if (this.cloudSyncConfig && this.cloudSyncConfig.type === 'anonymous') {
+            clearSyncConfig()
+            this.cloudSyncConfig = null
+            this.lastSyncTime = null
+            this.syncType = 'github'
+            this.githubToken = ''
+            this.gistId = ''
+            this.anonymousPassword = ''
+            await success('已自动断开连接（匿名口令数据已从服务器清理）')
+          }
         }
       } catch (err) {
         console.error('下载失败:', err)
